@@ -497,12 +497,37 @@ window.BJ_SPRITES = function (R) {
     bear:  { body: '#3b2f2c', belly: '#4b3e39', rump: '#3b2f2c', size: 1.0, neck: 2, leg: 7, head: '#3b2f2c' },
     moose: { body: '#5a4030', belly: '#6c4f3b', rump: '#5a4030', size: 1.35, neck: 8, leg: 14, head: '#4a3326' },
     deer:  { body: '#b58a5a', belly: '#d4b48a', rump: '#fff0d6', size: 0.95, neck: 7, leg: 10, head: '#a47a4c' },
+    cub:   { body: '#4a3a33', belly: '#5a4a42', rump: '#4a3a33', size: 0.5, neck: 2, leg: 7, head: '#4a3a33' },
+    coyote: { body: '#b39a74', belly: '#e0d2b4', rump: '#b39a74', size: 0.8, neck: 3, leg: 9, head: '#a58c68' },
+    goose: { size: 0.8 },
   };
+  function goose(a, X, Y, k) { // Canada goose: black neck and head, white chin strap, tan-grey body, white rump, orange feet
+    const sp = SP.goose; const s = sp.size * (a.big || 1);
+    at(X, Y, k * s, () => {
+      const f = a.face; const st = a.moving ? Math.sin(a.ph) * 2.6 : 0; const bob = a.moving ? -Math.abs(Math.sin(a.ph)) * 0.8 : 0;
+      ell(0, 0, 9, 2.6, 'rgba(0,0,0,.2)');
+      g.save(); g.lineWidth = 1.8; g.strokeStyle = '#ff9a2e';
+      [[-1.5, 1], [2, -1]].forEach(([x, d]) => { g.beginPath(); g.moveTo(f * x, -4 + bob); g.lineTo(f * x + st * d, -0.4); g.lineTo(f * x + st * d + f * 2.2, -0.4); g.stroke(); });
+      g.restore();
+      ell(0, -8 + bob, 9, 5.4, '#a89472', true);                 // body
+      ell(-f * 7, -9.6 + bob, 4, 3, '#26262e', true);            // black tail
+      ell(-f * 5.4, -9.6 + bob, 2.2, 3.4, '#fbfbf4');            // white rump
+      ell(f * 1, -7.4 + bob, 6, 3.2, '#c4b290');                 // wing
+      g.save(); g.lineCap = 'round'; g.lineWidth = 5; g.strokeStyle = INK; g.beginPath(); g.moveTo(f * 6, -10 + bob); g.quadraticCurveTo(f * 11, -14 + bob, f * 9.6, -19 + bob); g.stroke();
+      g.lineWidth = 3; g.strokeStyle = '#26262e'; g.stroke(); g.restore();                // long black neck
+      ell(f * 10.6, -20 + bob, 3.3, 2.8, '#26262e', true);       // head
+      ell(f * 10.8, -18.4 + bob, 2.4, 1.1, '#fbfbf4');           // white chin strap
+      g.fillStyle = '#26262e'; g.beginPath(); g.moveTo(f * 13.4, -20.6 + bob); g.lineTo(f * 16.4, -19.6 + bob); g.lineTo(f * 13.4, -18.8 + bob); g.closePath(); g.fill(); g.stroke(); // bill
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(f * 11.6, -21 + bob, 0.7, 0, TAU); g.fill();
+    });
+    a.sx = X; a.sy = Y; a.sk = k * s;
+  }
   function animal(a, X, Y, k) {
+    if (a.sp === 'goose') { goose(a, X, Y, k); return; }
     const sp = SP[a.sp]; const s = sp.size * (a.big || 1);
     at(X, Y, k * s, () => {
       const f = a.face; const sw = a.moving ? Math.sin(a.ph) * 3.4 : 0; const bob = a.moving ? -Math.abs(Math.sin(a.ph)) * 1 : 0;
-      const bear = a.sp === 'bear';
+      const bear = a.sp === 'bear' || a.sp === 'cub'; const yote = a.sp === 'coyote';
       ell(0, 0, 15, 4, 'rgba(0,0,0,.2)');
       g.save(); g.lineWidth = 3.4; g.strokeStyle = sp.belly;
       [[-8, 1], [-5, -1], [5, -1], [8, 1]].forEach(([x, d], i) => { const o = (i % 2 ? sw : -sw) * d; g.beginPath(); g.moveTo(f * x, -sp.leg + 2 + bob); g.lineTo(f * x + o, -0.5); g.stroke(); });
@@ -510,10 +535,12 @@ window.BJ_SPRITES = function (R) {
       g.save(); g.lineWidth = 1; g.beginPath(); [[-8, 1], [-5, -1], [5, -1], [8, 1]].forEach(([x, d], i) => { const o = (i % 2 ? sw : -sw) * d; g.moveTo(f * x + o + 2, -0.5); g.lineTo(f * x + o - 2, -0.5); }); g.stroke(); g.restore();
       const by = -sp.leg - 3 + bob; // body centre
       if (a.sp === 'moose') { ell(f * 3, by - 5, 8, 7, sp.body, true); } // shoulder hump
-      ell(0, by, bear ? 15 : 13, bear ? 8.5 : 7, sp.body, true);
+      ell(0, by, bear ? 15 : yote ? 12 : 13, bear ? 8.5 : yote ? 5.6 : 7, sp.body, true);
+      if (yote) ell(0, by + 2.6, 10, 2.4, sp.belly);
       if (sp.rump !== sp.body) ell(-f * 10, by - 1, 4, 5, sp.rump);
       // tail
-      ell(-f * 14, by - 3, 2.6, 2, sp.rump === sp.body ? sp.body : sp.rump, true);
+      if (yote) { g.save(); g.translate(-f * 12, by - 1); g.rotate(f * 0.9); ell(0, 3.6, 2.8, 6.6, sp.body, true); ell(0, 8.2, 2.3, 2.4, '#3a2f2a'); g.restore(); }
+      else ell(-f * 14, by - 3, 2.6, 2, sp.rump === sp.body ? sp.body : sp.rump, true);
       // neck + head
       const hx = f * (13 + sp.neck * 0.5); const hy = by - sp.neck - (bear ? 0 : 4);
       g.save(); g.lineWidth = 6 + (bear ? 3 : 0); g.strokeStyle = INK; g.beginPath(); g.moveTo(f * 8, by - 2); g.lineTo(hx, hy); g.stroke(); g.lineWidth = 3.6 + (bear ? 3 : 0); g.strokeStyle = sp.body; g.stroke(); g.restore();
@@ -521,10 +548,12 @@ window.BJ_SPRITES = function (R) {
         const long = a.sp === 'moose' ? 1.4 : 1;
         ell(hx + f * 3 * long, hy + 1, 6.4 * long, 4.2, sp.head, true);
         ell(hx + f * 8 * long, hy + 2.4, 2.4, 2, '#2b2b3a');
-      } else { ell(hx + f * 2, hy, bear ? 5.6 : 5, bear ? 5 : 4.4, sp.head, true); if (bear) ell(hx + f * 5.4, hy + 1.6, 3, 2.4, '#c8a67a', true); }
+      } else if (yote) { ell(hx + f * 1.5, hy, 4.6, 4, sp.head, true); ell(hx + f * 6.4, hy + 1.2, 4, 2, '#d8c8a4', true); ell(hx + f * 9.6, hy + 0.6, 1.5, 1.2, '#26262e'); }
+      else { ell(hx + f * 2, hy, bear ? 5.6 : 5, bear ? 5 : 4.4, sp.head, true); if (bear) ell(hx + f * 5.4, hy + 1.6, 3, 2.4, '#c8a67a', true); }
       g.fillStyle = INK; g.beginPath(); g.arc(hx + f * 3, hy - 1, 1, 0, TAU); g.fill();
       // ears
-      if (a.sp === 'bear') { ell(hx - f * 1, hy - 5, 2.4, 2.4, sp.body, true); ell(hx + f * 3, hy - 5, 2.4, 2.4, sp.body, true); }
+      if (bear) { ell(hx - f * 1, hy - 5, 2.4, 2.4, sp.body, true); ell(hx + f * 3, hy - 5, 2.4, 2.4, sp.body, true); }
+      else if (yote) { poly([[hx - f * 2.6, hy - 2], [hx - f * 1.6, hy - 9], [hx + f * 0.6, hy - 2.6]], sp.head); poly([[hx + f * 0.4, hy - 2.4], [hx + f * 2.4, hy - 9], [hx + f * 3.4, hy - 2.2]], sp.head); }
       else { g.beginPath(); g.ellipse(hx - f * 2, hy - 4, 1.8, 3.4, f * 0.6, 0, TAU); g.fillStyle = sp.head; g.fill(); g.stroke(); }
       // headgear
       g.save(); g.lineWidth = 1.8; g.strokeStyle = INK;

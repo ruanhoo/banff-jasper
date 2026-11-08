@@ -249,12 +249,52 @@
     if (!near) return;
     let x = near.x; let y = near.y;
     for (let k = 0; k < 24; k++) { const a = rnd() * TAU; const d = 40 + rnd() * r; x = near.x + Math.cos(a) * d; y = near.y + Math.sin(a) * d * 0.8; if (!W.inLake(x, y, 24)) break; }
-    animals.push({ id: uid++, sp, x, y, hx: near.x, hy: near.y, r, face: rnd() < 0.5 ? 1 : -1, ph: rnd() * 6, moving: false, t: rnd() * 5, tx: x, ty: y, big: 0.92 + rnd() * 0.18, bull: rnd() < 0.5, spd: { elk: 22, sheep: 18, goat: 14, bear: 26, moose: 18, deer: 28 }[sp] });
+    animals.push({ id: uid++, sp, x, y, hx: near.x, hy: near.y, r, face: rnd() < 0.5 ? 1 : -1, ph: rnd() * 6, moving: false, t: rnd() * 5, tx: x, ty: y, big: 0.92 + rnd() * 0.18, bull: rnd() < 0.5, spd: { elk: 22, sheep: 18, goat: 14, bear: 26, moose: 18, deer: 28, coyote: 34, cub: 30 }[sp] });
+    return animals[animals.length - 1];
   }
   [['elk', 'elk', 4, 190], ['elk', 'jasper', 3, 210], ['elk', 'jpl', 2, 160], ['elk', 'vermilion', 2, 180], ['sheep', 'malignewild', 3, 120], ['sheep', 'wilcox', 3, 120], ['sheep', 'radium', 2, 100], ['sheep', 'abraham', 2, 130],
     ['goat', 'goats', 3, 90], ['goat', 'tangle', 2, 80], ['goat', 'sixglaciers', 2, 80], ['bear', 'bvpwild', 2, 240], ['bear', 'malignewild', 1, 200], ['bear', 'larch', 1, 160], ['bear', 'sunwapta', 1, 160],
     ['moose', 'waterfowl', 1, 140], ['moose', 'medicine', 1, 160], ['moose', 'vermilion', 1, 150], ['moose', 'annette', 1, 140], ['deer', 'banffave', 2, 220], ['deer', 'jasper', 2, 240], ['deer', 'lakelouise', 1, 160]].forEach(([sp, id, n, r]) => { for (let i = 0; i < n; i++) mkAnimal(sp, P[id], r); });
+  // more everyday wildlife
+  [['deer', 'bowfalls', 1, 160], ['deer', 'emerald', 1, 140], ['deer', 'jpl', 2, 200], ['deer', 'cavell', 1, 160], ['deer', 'johnston', 1, 140], ['elk', 'banffave', 2, 200], ['elk', 'minnewanka', 2, 180], ['elk', 'pyramid', 2, 160],
+    ['elk', 'lakelouise', 1, 160], ['moose', 'maligne', 1, 160], ['moose', 'pyramid', 1, 140], ['moose', 'bowlake', 1, 140], ['coyote', 'bvpwild', 1, 220], ['coyote', 'jasper', 1, 240], ['coyote', 'tunnelmtn', 1, 200],
+    ['coyote', 'mistaya', 1, 200], ['coyote', 'miette', 1, 180]].forEach(([sp, id, n, r]) => { for (let i = 0; i < n; i++) mkAnimal(sp, P[id], r); });
+  // bear families: a big mother with a few cubs trotting behind her
+  [['bvpwild', 3, 260], ['larch', 2, 170], ['medicine', 2, 180]].forEach(([id, n, r]) => {
+    const mom = mkAnimal('bear', P[id], r); if (!mom) return;
+    mom.big = 1.5; mom.mother = true; mom.spd = 22;
+    for (let i = 0; i < n; i++) { const c = mkAnimal('cub', P[id], r); if (!c) continue; c.mom = mom; c.x = mom.x + (i - 1) * 14; c.y = mom.y + 10 + i * 4; c.hx = mom.hx; c.hy = mom.hy; c.ox = (i - (n - 1) / 2) * 15; c.oy = 9 + (i % 2) * 7; c.big = 0.95 + rnd() * 0.15; }
+  });
+  // Canada geese marching in single file along the road; cars slow down for them
+  const flocks = [];
+  ['banff', 'jasper', 'maligne', 'louise'].forEach((hub, i) => {
+    const ri = ROADS.findIndex((r) => r.a === hub || r.b === hub); if (ri < 0) return;
+    const len = ROADS[ri].line.len; const s0 = len * (0.3 + 0.1 * i);
+    const f = { ri, s: s0, s0, dir: i % 2 ? -1 : 1, v: 13, n: 5 + (i % 3), range: Math.min(110, len * 0.3), members: [] };
+    for (let k = 0; k < f.n; k++) { const g = { id: uid++, sp: 'goose', x: 0, y: 0, hx: 0, hy: 0, r: 0, face: 1, ph: rnd() * 6, moving: true, t: 0, tx: 0, ty: 0, big: 0.95 + rnd() * 0.12, spd: 0, flock: f, fi: k }; f.members.push(g); animals.push(g); }
+    flocks.push(f);
+  });
+  function updFlock(f, dt) {
+    f.s += f.dir * f.v * dt;
+    if (f.s > f.s0 + f.range) { f.s = f.s0 + f.range; f.dir = -1; } else if (f.s < f.s0 - f.range) { f.s = f.s0 - f.range; f.dir = 1; }
+    const line = ROADS[f.ri].line;
+    f.members.forEach((m) => {
+      const ss = Math.max(1, Math.min(line.len - 1, f.s - f.dir * m.fi * 15)); const q = W.posAt(line, ss); const a = q[2] + (f.dir < 0 ? Math.PI : 0);
+      const off = Math.sin(time * 1.3 + m.fi * 0.9) * 2.2;
+      m.x = q[0] - Math.sin(a) * off; m.y = q[1] + Math.cos(a) * off;
+      const cx = Math.cos(a); if (Math.abs(cx) > 0.12) m.face = cx > 0 ? 1 : -1;
+      m.ph += dt * 8;
+    });
+  }
+  const nearFlock = (ri, s) => flocks.find((f) => f.ri === ri && Math.abs(f.s - s) < 70);
+  const hibernating = (a) => (a.sp === 'bear' || a.sp === 'cub') && sea.bare > 0.5;
   function updAnimal(a, dt) {
+    if (a.flock) return;
+    if (a.mom) {
+      const m = a.mom; const tx2 = m.x + (m.face > 0 ? -1 : 1) * 10 + a.ox; const ty2 = m.y + a.oy; const dx = tx2 - a.x; const dy = ty2 - a.y; const d = Math.hypot(dx, dy);
+      if (d > 7) { a.moving = true; a.ph += dt * 8; const sp2 = a.spd * (d > 40 ? 1.7 : 1); a.x += (dx / d) * sp2 * dt; a.y += (dy / d) * sp2 * dt; if (Math.abs(dx) > 0.5) a.face = dx > 0 ? 1 : -1; } else { a.moving = false; a.face = m.face; }
+      return;
+    }
     if (a.moving) {
       a.ph += dt * 7; const dx = a.tx - a.x; const dy = a.ty - a.y; const d = Math.hypot(dx, dy);
       if (d < 3) { a.moving = false; a.t = 3 + rnd() * 8; } else { a.x += (dx / d) * a.spd * dt; a.y += (dy / d) * a.spd * dt; if (Math.abs(dx) > 0.5) a.face = dx > 0 ? 1 : -1; }
@@ -292,6 +332,7 @@
   function updCar(c, dt) {
     const line = ROADS[c.ri].line; const q = W.posAt(line, c.s); const jm = jamAt(q[0], q[1]); c.jam = !!jm;
     let v = c.v * (jm ? 0.12 : 1);
+    const gf = nearFlock(c.ri, c.s); if (gf) { v = Math.min(v, 14); if (time - c.jt > 40) { c.jt = time; if (rnd() < 0.5) addLog(tx('logGeese')); } }
     for (const o of cars) { if (o !== c && o.ri === c.ri && o.dir === c.dir) { const gap = (o.s - c.s) * c.dir; if (gap > 0 && gap < (c.len + o.len) / 2 + 14) v = Math.min(v, o.v * 0.8); } }
     c.s += c.dir * v * dt;
     if (jm && time - c.jt > 40) { c.jt = time; if (rnd() < 0.5) addLog(tx('logJam')); }
@@ -637,7 +678,7 @@
     dyn.length = 0; const z = cam.z; const B = boost();
     const vis = (x, y) => { const X = sx(x); const Y = sy(y); return X > -70 && X < Wc + 70 && Y > -60 && Y < Hc + 130; };
     people.forEach((p) => { if (vis(p.x, p.y) && !hidden(p)) dyn.push({ y: p.y, t: 0, o: p }); });
-    animals.forEach((a) => { if (vis(a.x, a.y)) dyn.push({ y: a.y, t: 1, o: a }); });
+    animals.forEach((a) => { if (vis(a.x, a.y) && !hibernating(a)) dyn.push({ y: a.y, t: 1, o: a }); });
     cars.forEach((c) => { if (vis(c.x, c.y)) dyn.push({ y: c.y, t: 2, o: c }); });
     trains.forEach((t) => t.cars.forEach((c) => { if (vis(c.x, c.y)) dyn.push({ y: c.y, t: 3, o: c }); }));
     if (iceLine && sea.bare < 0.5 && vis(iceBus.x, iceBus.y)) dyn.push({ y: iceBus.y, t: 4, o: iceBus });
@@ -809,7 +850,7 @@
   let fps = 60; let lastT = performance.now(); let chatT = 0; let decreeT = 0; let autoSeasonT = 0;
   function update(dt) {
     time += dt;
-    people.forEach((p) => updPerson(p, dt)); animals.forEach((a) => updAnimal(a, dt)); eagles.forEach((e) => updEagle(e, dt)); cars.forEach((c) => updCar(c, dt));
+    people.forEach((p) => updPerson(p, dt)); flocks.forEach((f) => updFlock(f, dt)); animals.forEach((a) => updAnimal(a, dt)); eagles.forEach((e) => updEagle(e, dt)); cars.forEach((c) => updCar(c, dt));
     trains.forEach((t) => updTrain(t, dt)); updBus(iceBus, dt); lakeFolk.forEach((q) => updFolk(q, dt));
     clouds.forEach((c) => { c.x += c.v * dt; if (c.x > BOUNDS.x1 + 600) { c.x = BOUNDS.x0 - 600; c.y = BOUNDS.y0 + rnd() * (BOUNDS.y1 - BOUNDS.y0); } });
     if (todMode === 4) phase = (phase + dt / 220) % 1;
@@ -848,7 +889,7 @@
     if (window.TELE && window.TELE.hit(x, y, sx(PORTAL.x), sy(PORTAL.y), cam.z)) return { type: 'portal' };
     let best = null; let bd = 1e9;
     const test = (o, type, r) => { if (!o.sx) return; const d = Math.hypot(x - o.sx, y - (o.sy - 16 * (o.sk || 1))); if (d < r * (o.sk || 1) + 8 && d < bd) { bd = d; best = { type, o }; } };
-    people.forEach((p) => { if (!hidden(p)) test(p, 'person', 24); }); animals.forEach((a) => test(a, 'animal', 20)); trains.forEach((t) => test(t.cars[0], 'train', 26)); if (iceLine && sea.bare < 0.5) test(iceBus, 'bus', 26);
+    people.forEach((p) => { if (!hidden(p)) test(p, 'person', 24); }); animals.forEach((a) => { if (!hibernating(a)) test(a, 'animal', 20); }); trains.forEach((t) => test(t.cars[0], 'train', 26)); if (iceLine && sea.bare < 0.5) test(iceBus, 'bus', 26);
     if (best) return best;
     for (const p of PLACES) { if (p.pin && Math.hypot(x - p.pin.x, y - p.pin.y) < p.pin.r + 3 && p.pin.y > -20) return { type: 'place', p }; }
     for (let i = PLACES.length - 1; i >= 0; i--) { const h = PLACES[i].b.hit; if (h && x > h.x && x < h.x + h.w && y > h.y && y < h.y + h.h) return { type: 'place', p: PLACES[i] }; }

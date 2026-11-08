@@ -9,7 +9,7 @@ turquoise lakes, glaciers, waterfalls, hot springs, hikes, wildlife spots and a 
 - **Living map** (`living/`): a hand-drawn canvas model of the whole corridor, squeezed so that every area has room to breathe.
   - Fourteen hubs along the road: Banff, Minnewanka, Sunshine, the Bow Valley Parkway, Kootenay, Lake Louise & Moraine, Yoho, the upper Parkway, Saskatchewan Crossing, the Columbia Icefield, Sunwapta, Jasper, Mount Edith Cavell and the Maligne Valley.
   - **Seasons**: spring blossom, summer canoes on the lakes, golden larches in autumn, snow and skaters on frozen lakes in winter.
-  - Elk, bighorn sheep, mountain goats, bears, moose, eagles, a freight train, a tourist train, the Ice Explorer on the Athabasca Glacier, wildlife traffic jams, a day/night cycle with northern lights, a route planner, a journal and a portal to the other city maps.
+  - Elk, deer, moose, coyotes, bighorn sheep, mountain goats, black bears (a mother with her cubs, hibernating in winter), Canada geese that march across the road and slow the cars, eagles, a freight train, a tourist train, the Ice Explorer on the Athabasca Glacier, wildlife traffic jams, a day/night cycle with northern lights, a route planner, a journal and a portal to the other city maps.
 
 ## Run locally
 
