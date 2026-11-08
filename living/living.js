@@ -130,7 +130,7 @@
   // statics (y sorted): peaks, trees, places, portal
   const statics = [];
   PEAKS.forEach((pk) => statics.push({ x: pk.x, y: pk.y, m: pk.h + 40, wide: pk.w / 2 + 10, type: 1, pk }));
-  buildings.forEach((b) => statics.push({ x: b.x, y: b.y, m: 190, wide: 130, type: 2, b }));
+  buildings.forEach((b) => statics.push({ x: b.x, y: b.y, m: 190, wide: b.kind === 'center' ? 320 : 130, type: 2, b }));
   statics.push({ x: PORTAL.x, y: PORTAL.y, m: 110, wide: 90, type: 3 });
   (() => {
     const step = 62;
@@ -199,7 +199,7 @@
     const nm = nameOf(d);
     if (p.owner) {
       setDecree(() => fmt(pick(food ? tx('declFood') : tx('declSight')), { s: nameOf(d) }), true);
-    } else if (rnd() < 0.5) {
+    } else if (rnd() < 0.5 && !hidden(p)) {
       addLog(fmt(tx(food ? 'logEat' : 'logSee'), { e: d.emoji, n: personName(p), s: esc(nm) }));
       if (rnd() < 0.5) bubble(p, fmt(pick(tx(food ? 'eatFood' : 'seeSight')), { s: nm }), 3.2);
     }
@@ -303,6 +303,9 @@
     t.cars.forEach((c, i) => { const s = clamp(t.s - t.dir * i * 36, 0, railLine.len); const q = W.posAt(railLine, s); c.x = q[0]; c.y = q[1]; c.ang = q[2] + (t.dir < 0 ? Math.PI : 0); });
   }
   const iceLine = P.icefield && P.athglacier ? W.mkLine([[P.icefield.x + 40, P.icefield.y + 30], [(P.icefield.x + P.athglacier.x) / 2, (P.icefield.y + P.athglacier.y) / 2 + 30], [P.athglacier.x - 30, P.athglacier.y + 8]]) : null;
+  // the icefield is closed to visitors in winter: no hikers, no Ice Explorer
+  const winterEmpty = (x, y) => sea.bare > 0.5 && Math.hypot(x - HUBS.icefield.x, (y - HUBS.icefield.y) * 1.3) < HUBS.icefield.R + 320;
+  const hidden = (p) => !p.owner && p.st !== 'drive' && winterEmpty(p.x, p.y);
   const iceBus = { id: 'ice', s: 0, dir: 1, v: 38, wait: 3, x: 0, y: 0, ang: 0, sx: 0, sy: 0, sk: 1 };
   function updBus(b, dt) {
     if (!iceLine) return;
@@ -492,6 +495,25 @@
         g.stroke(); g.restore();
       }
     });
+    drawMelt();
+  }
+  // meltwater from the Columbia Icefield: three streams into a pond, then a channel to the Athabasca River
+  function drawMelt() {
+    const M = W.MELT; if (!M || !inView(M.pond.x, M.pond.y, 700 * cam.z + 200)) return;
+    const frozen = sea.bare > 0.5; const wc = frozen ? '#f4fbff' : '#4cc3e0'; const z = cam.z;
+    const flow = (pts, w0) => {
+      pathPts(pts, false); g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = Math.max(2.5, (w0 + 5) * z); g.stroke();
+      g.strokeStyle = wc; g.lineWidth = Math.max(1.4, w0 * z); g.stroke();
+      if (z > 0.3 && !frozen) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = Math.max(1, 2.2 * z); g.setLineDash([10 * z, 16 * z]); g.lineDashOffset = -time * 40 * z; g.stroke(); g.setLineDash([]); }
+    };
+    flow(M.out, 12); M.streams.forEach((st) => flow(st, 9));
+    const px = sx(M.pond.x); const py = sy(M.pond.y);
+    g.beginPath(); g.ellipse(px, py, M.pond.rx * z, M.pond.ry * z * cam.tilt * 1.4, 0, 0, TAU); g.fillStyle = frozen ? '#ffffff' : '#59c6dc'; g.fill(); g.lineWidth = Math.max(1.6, 3 * z); g.strokeStyle = INK; g.stroke();
+    if (z > 0.3) {
+      g.save(); g.beginPath(); g.ellipse(px, py, M.pond.rx * z, M.pond.ry * z * cam.tilt * 1.4, 0, 0, TAU); g.clip(); g.strokeStyle = frozen ? 'rgba(150,200,225,.7)' : 'rgba(255,255,255,.75)'; g.lineWidth = Math.max(1, 2 * z);
+      for (let i = 0; i < 3; i++) { const o = frozen ? 0 : Math.sin(time * 1.6 + i * 2) * 5 * z; g.beginPath(); g.moveTo(px - 38 * z + o + i * 6 * z, py + (i - 1) * 9 * z * cam.tilt); g.quadraticCurveTo(px + i * 8 * z, py + (i - 1) * 9 * z * cam.tilt - 5 * z, px + 38 * z + o, py + (i - 1) * 9 * z * cam.tilt); g.stroke(); }
+      g.restore();
+    }
   }
   function drawLakes() {
     const frozen = sea.bare;
@@ -553,11 +575,11 @@
   function collect() {
     dyn.length = 0; const z = cam.z; const B = boost();
     const vis = (x, y) => { const X = sx(x); const Y = sy(y); return X > -70 && X < Wc + 70 && Y > -60 && Y < Hc + 130; };
-    people.forEach((p) => { if (vis(p.x, p.y)) dyn.push({ y: p.y, t: 0, o: p }); });
+    people.forEach((p) => { if (vis(p.x, p.y) && !hidden(p)) dyn.push({ y: p.y, t: 0, o: p }); });
     animals.forEach((a) => { if (vis(a.x, a.y)) dyn.push({ y: a.y, t: 1, o: a }); });
     cars.forEach((c) => { if (vis(c.x, c.y)) dyn.push({ y: c.y, t: 2, o: c }); });
     trains.forEach((t) => t.cars.forEach((c) => { if (vis(c.x, c.y)) dyn.push({ y: c.y, t: 3, o: c }); }));
-    if (iceLine && vis(iceBus.x, iceBus.y)) dyn.push({ y: iceBus.y, t: 4, o: iceBus });
+    if (iceLine && sea.bare < 0.5 && vis(iceBus.x, iceBus.y)) dyn.push({ y: iceBus.y, t: 4, o: iceBus });
     const vc = 1 - sea.snow; const vs = sea.bare;
     lakeFolk.forEach((q) => {
       if (!vis(q.x, q.y)) return;
@@ -694,7 +716,7 @@
   function drawBubbles(dt) {
     for (let i = bubbles.length - 1; i >= 0; i--) {
       const b = bubbles[i]; if (b.d > 0) { b.d -= dt; continue; } b.t -= dt; if (b.t <= 0) { bubbles.splice(i, 1); continue; }
-      const o = b.o; if (!o.sx) continue; const X = o.sx; const Y = o.sy - 56 * (o.sk || 1) - 4; if (X < -100 || X > Wc + 100 || Y < -20 || Y > Hc + 40) continue;
+      const o = b.o; if (!o.sx || (people.includes(o) && hidden(o))) continue; const X = o.sx; const Y = o.sy - 56 * (o.sk || 1) - 4; if (X < -100 || X > Wc + 100 || Y < -20 || Y > Hc + 40) continue;
       g.save(); g.font = `600 13px ${FONT}`; const lines = wrapText(b.text, 170); const w = Math.max(...lines.map((l) => g.measureText(l).width)) + 18; const h = lines.length * 17 + 12;
       g.globalAlpha = Math.min(1, b.t * 2); g.fillStyle = '#fff'; g.strokeStyle = INK; g.lineWidth = 2.4; S.rr(X - w / 2, Y - h, w, h, 12); g.fill(); g.stroke();
       g.beginPath(); g.moveTo(X - 6, Y - 1); g.lineTo(X, Y + 7); g.lineTo(X + 6, Y - 1); g.fillStyle = '#fff'; g.fill(); g.beginPath(); g.moveTo(X - 6, Y - 1.5); g.lineTo(X, Y + 7); g.lineTo(X + 6, Y - 1.5); g.stroke();
@@ -733,11 +755,13 @@
     if (seasonMode === 'auto') { autoSeasonT += dt; if (autoSeasonT > 55) { autoSeasonT = 0; seasonAuto++; } }
     chatT += dt; if (chatT > 0.7) { chatT = 0; chat(); }
     decreeT += dt; if (decreeT > 28) { decreeT = 0; setDecree(() => seasonLine(), false); }
+    if (followT && followIsPerson && hidden(followT)) stopFollow();
+    if (followT && followT === iceBus && sea.bare > 0.5) stopFollow();
     if (followT) updFollowUI();
   }
   function chat() {
     for (let i = 0; i < people.length; i++) for (let j = i + 1; j < people.length; j++) {
-      const a = people[i]; const b = people[j]; if (a.hub !== b.hub || a.st === 'drive' || b.st === 'drive' || a.cd > time || b.cd > time) continue;
+      const a = people[i]; const b = people[j]; if (hidden(a) || hidden(b) || a.hub !== b.hub || a.st === 'drive' || b.st === 'drive' || a.cd > time || b.cd > time) continue;
       if (Math.hypot(a.x - b.x, a.y - b.y) < 46 && rnd() < 0.5) {
         a.cd = b.cd = time + 25; const dest = a.dest && a.dest.name ? a.dest : pick(byHub[a.hub] || PLACES);
         bubble(a, fmt(pick(tx('greet')), { n: a.owner ? tx('rangerName') : personName(b), s: nameOf(dest) }), 3.4); bubble(b, pick(tx('reply')), 3, 1.8);
@@ -763,7 +787,7 @@
     if (window.TELE && window.TELE.hit(x, y, sx(PORTAL.x), sy(PORTAL.y), cam.z)) return { type: 'portal' };
     let best = null; let bd = 1e9;
     const test = (o, type, r) => { if (!o.sx) return; const d = Math.hypot(x - o.sx, y - (o.sy - 16 * (o.sk || 1))); if (d < r * (o.sk || 1) + 8 && d < bd) { bd = d; best = { type, o }; } };
-    people.forEach((p) => test(p, 'person', 24)); animals.forEach((a) => test(a, 'animal', 20)); trains.forEach((t) => test(t.cars[0], 'train', 26)); if (iceLine) test(iceBus, 'bus', 26);
+    people.forEach((p) => { if (!hidden(p)) test(p, 'person', 24); }); animals.forEach((a) => test(a, 'animal', 20)); trains.forEach((t) => test(t.cars[0], 'train', 26)); if (iceLine && sea.bare < 0.5) test(iceBus, 'bus', 26);
     if (best) return best;
     for (const p of PLACES) { if (p.pin && Math.hypot(x - p.pin.x, y - p.pin.y) < p.pin.r + 3 && p.pin.y > -20) return { type: 'place', p }; }
     for (let i = PLACES.length - 1; i >= 0; i--) { const h = PLACES[i].b.hit; if (h && x > h.x && x < h.x + h.w && y > h.y && y < h.y + h.h) return { type: 'place', p: PLACES[i] }; }
@@ -901,7 +925,8 @@
   if (QS.get('route')) { QS.get('route').split(',').forEach((id) => planSel.add(id)); renderPlanList(); updPlanCount(); planGo(); }
   if (QS.get('panel') && PANELS[QS.get('panel')]) openPanel(QS.get('panel'));
   if (QS.get('portal') !== null) { setCam(PORTAL.x, PORTAL.y - 20, 1.1, true); if (QS.get('portal') === 'open' && window.TELE) window.TELE.open(); }
-  if (QS.get('follow')) { followTarget(QS.get('follow') === 'aspen' ? aspen : people[0], true); }
+  if (QS.get('follow') === 'ice' && iceLine) followTarget(iceBus);
+  else if (QS.get('follow')) { followTarget(QS.get('follow') === 'aspen' ? aspen : people[0], true); }
   cam.tilt = cam.ttilt;
   if (!QS.has('nointro') && !store.get(INTRO_KEY, '')) openIntro();
   window.__bj = { cam, people, animals, cars, trains, aspen, PORTAL, JAMS, env, sea, statics, setLang, select, jumpTo, get time() { return time; } };

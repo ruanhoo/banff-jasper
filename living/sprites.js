@@ -49,6 +49,35 @@ window.BJ_SPRITES = function (R) {
     pk.ridge = pts; pk.s = s; pk.warm = r() < 0.38; pk.snowV = r() * 0.12;
   }
   const ROCK = { cool: '#8b9dbd', warm: '#a49a8f' };
+  // Mt. Columbia: an ice sheet draped over the face, with three meltwater tongues running down
+  const FAN = [-0.17, 0.03, 0.2];
+  function heroIce(w, h, k, s) {
+    const frozen = R.sea.bare > 0.5; const yT = -h * 0.74; const yB = -h * 0.27; const N = 48;
+    const edge = [];
+    for (let i = 0; i <= N; i++) {
+      const x = w * 0.6 - i * (w * 1.2 / N); let y = yB + Math.sin(i * 0.9) * h * 0.02;
+      FAN.forEach((a) => { const d = Math.abs(x - a * 0.9 * w); if (d < w * 0.05) y += (1 - d / (w * 0.05)) * h * 0.17; });
+      edge.push([x, y]);
+    }
+    const sheet = () => { g.beginPath(); g.moveTo(-w * 0.6, yT); g.lineTo(w * 0.6, yT); edge.forEach((p) => g.lineTo(p[0], p[1])); g.closePath(); };
+    sheet(); g.fillStyle = '#e2f4ff'; g.fill();
+    g.save(); sheet(); g.clip(); g.fillStyle = 'rgba(70,130,200,.26)'; g.fillRect(s * w, yT, w, h);
+    g.strokeStyle = 'rgba(80,140,200,.6)'; g.lineWidth = 1.4 / k; g.beginPath();
+    for (let i = 0; i < 9; i++) { const x = -w * 0.4 + i * w * 0.1; g.moveTo(x, yT + h * (0.08 + (i % 3) * 0.04)); g.lineTo(x + w * 0.03, yB + h * 0.02); }
+    g.stroke(); g.restore();
+    g.beginPath(); edge.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.stroke();
+    // meltwater
+    const wc = frozen ? '#f4fbff' : '#4cc3e0'; const tip = yB + h * 0.17; const t = R.t;
+    FAN.forEach((a, si) => {
+      const pts = [];
+      for (let i = 0; i <= 14; i++) { const u = i / 14; pts.push([a * 0.9 * w + Math.sin(u * 6 + si * 2) * w * 0.012 * Math.sin(u * Math.PI), tip * (1 - u)]); }
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      const path = () => { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); };
+      path(); g.strokeStyle = INK; g.lineWidth = 14; g.stroke();
+      path(); g.strokeStyle = wc; g.lineWidth = 9; g.stroke();
+      if (!frozen) { path(); g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2.6; g.setLineDash([12, 20]); g.lineDashOffset = -t * 44; g.stroke(); g.setLineDash([]); }
+    });
+  }
   function peakBody(pk, X, Y, k) {
     if (!pk.ridge) ridgeFor(pk);
     const w = pk.w; const h = pk.h; const R_ = pk.ridge; const s = pk.s;
@@ -75,6 +104,7 @@ window.BJ_SPRITES = function (R) {
       g.beginPath(); g.moveTo(s * w, -h); R_.filter((p) => p[0] > s).forEach((p) => g.lineTo(p[0] * w, p[1] * h)); g.lineTo(s * w + w * 0.12, 0); g.lineTo(s * w + w * 0.03, -h * 0.5); g.closePath();
       g.fillStyle = 'rgba(52,64,110,.32)'; g.fill();
       // a couple of rock cracks
+      if (pk.hero) heroIce(w, h, k, s);
       g.lineWidth = 1 / k; g.globalAlpha = 0.35; g.beginPath(); g.moveTo(s * w + w * 0.02, -h * 0.82); g.lineTo(s * w + w * 0.08, -h * 0.4); g.moveTo(s * w - w * 0.06, -h * 0.7); g.lineTo(s * w - w * 0.13, -h * 0.28); g.stroke(); g.globalAlpha = 1;
       g.restore();
     }
@@ -265,15 +295,69 @@ window.BJ_SPRITES = function (R) {
     // telescope on a tripod
     g.beginPath(); g.moveTo(36, 0); g.lineTo(42, -14); g.lineTo(48, 0); g.stroke(); g.save(); g.translate(42, -14); g.rotate(-0.7); box(-3, -14, 6, 16, '#e8503a', 2); g.restore();
   };
-  K.center = (b, night) => { // Columbia Icefield Centre
+  const LEAF = [[0, -1], [0.18, -0.65], [0.38, -0.75], [0.32, -0.38], [0.62, -0.45], [0.52, -0.2], [0.78, 0], [0.4, 0.18], [0.45, 0.4], [0.08, 0.3], [0.06, 0.75], [-0.06, 0.75], [-0.08, 0.3], [-0.45, 0.4], [-0.4, 0.18], [-0.78, 0], [-0.52, -0.2], [-0.62, -0.45], [-0.32, -0.38], [-0.38, -0.75], [-0.18, -0.65]];
+  // a big Canadian flag (red-white-red with a maple leaf) rippling from a tall pole
+  function canadaFlag(px, py, fw, night) {
+    const fh = fw / 2; const N = 36; const cw = fw / N; const t = R.t;
+    const wav = (x) => Math.sin(x * 0.075 - t * 4.2) * (3 + (x / fw) * 6) * (x / fw + 0.15);
+    for (let i = 0; i < N; i++) {
+      const x = i * cw; const u = x / fw; g.fillStyle = u < 0.25 || u >= 0.75 ? '#d8202f' : '#ffffff';
+      const dy = wav(x) + (night > 0.2 ? 0 : 0); g.fillRect(px + x, py + dy, cw + 0.8, fh);
+    }
+    g.save(); g.lineWidth = 3; g.beginPath(); for (let i = 0; i <= N; i++) { const x = i * cw; g.lineTo(px + x, py + wav(x)); } g.stroke(); g.beginPath(); for (let i = 0; i <= N; i++) { const x = i * cw; g.lineTo(px + x, py + fh + wav(x)); } g.stroke(); g.restore();
+    g.beginPath(); LEAF.forEach((p, i) => { const x = fw / 2 + p[0] * fh * 0.4; const y = fh / 2 + p[1] * fh * 0.42 + wav(x); (i ? g.lineTo(px + x, py + y) : g.moveTo(px + x, py + y)); }); g.closePath(); g.fillStyle = '#d8202f'; g.fill();
+  }
+  // the giant Ferris wheel on the ice
+  function bigWheel(cx, cy, Rr, night) {
+    const t = R.t; const winter = R.sea.bare > 0.5; const n = 16; const rot = t * 0.18;
+    g.save(); g.lineJoin = 'round'; g.lineCap = 'round';
+    // A-frame legs
+    g.lineWidth = 9; g.strokeStyle = INK; g.beginPath(); g.moveTo(cx - 58, 0); g.lineTo(cx, cy); g.lineTo(cx + 58, 0); g.stroke();
+    g.lineWidth = 5; g.strokeStyle = '#f2f6fa'; g.beginPath(); g.moveTo(cx - 58, 0); g.lineTo(cx, cy); g.lineTo(cx + 58, 0); g.stroke();
+    g.lineWidth = 3; g.strokeStyle = INK; g.beginPath(); g.moveTo(cx - 36, -Rr * 0.33); g.lineTo(cx + 36, -Rr * 0.33); g.stroke();
+    // spokes
+    g.lineWidth = 2; g.strokeStyle = INK; g.beginPath();
+    for (let i = 0; i < n; i++) { const a = rot + i * TAU / n; g.moveTo(cx, cy); g.lineTo(cx + Math.cos(a) * Rr, cy + Math.sin(a) * Rr); }
+    g.stroke();
+    g.beginPath(); g.arc(cx, cy, Rr * 0.62, 0, TAU); g.stroke();
+    // rim
+    g.beginPath(); g.arc(cx, cy, Rr, 0, TAU); g.lineWidth = 9; g.strokeStyle = INK; g.stroke();
+    g.beginPath(); g.arc(cx, cy, Rr, 0, TAU); g.lineWidth = 5; g.strokeStyle = '#d8202f'; g.stroke();
+    g.beginPath(); g.arc(cx, cy, Rr - 5, 0, TAU); g.lineWidth = 2.4; g.strokeStyle = INK; g.stroke();
+    g.restore();
+    // gondolas stay upright
+    for (let i = 0; i < n; i++) {
+      const a = rot + i * TAU / n; const gx = cx + Math.cos(a) * Rr; const gy = cy + Math.sin(a) * Rr;
+      g.save(); g.lineWidth = 1.6; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx, gy + 6); g.stroke(); g.restore();
+      box(gx - 8, gy + 5, 16, 13, JACKS[i % JACKS.length], 3);
+      box(gx - 5.5, gy + 8, 11, 5, night > 0.2 ? '#ffe28a' : '#d8f1fb', 1.5);
+      if (!winter) ell(gx, gy + 7, 2.6, 2.6, SKIN[i % SKIN.length], true);
+    }
+    ell(cx, cy, 10, 10, '#ffc93c', true); ell(cx, cy, 4, 4, '#fff');
+    if (night > 0.2) {
+      g.save(); g.globalAlpha = Math.min(1, night);
+      for (let i = 0; i < 32; i++) { const a = rot + i * TAU / 32; ell(cx + Math.cos(a) * (Rr + 5), cy + Math.sin(a) * (Rr + 5), 2.4, 2.4, i % 2 ? '#ffe28a' : '#ff8a8a'); }
+      g.restore();
+      light(cx, cy, Rr * 1.5, '255,210,130');
+      for (let i = 0; i < 6; i++) { const a = rot + i * TAU / 6; light(cx + Math.cos(a) * Rr, cy + Math.sin(a) * Rr + 10, 34, i % 2 ? '255,230,140' : '255,140,140'); }
+    }
+  }
+  K.center = (b, night) => { // Columbia Icefield Centre: icy plaza, giant Ferris wheel and a big Canadian flag
+    ell(30, 6, 270, 30, '#eaf8ff', true);
+    g.save(); g.globalAlpha = 0.5; g.strokeStyle = 'rgba(90,150,210,.8)'; g.beginPath(); g.moveTo(-200, 8); g.lineTo(-150, 18); g.moveTo(190, 20); g.lineTo(240, 8); g.moveTo(-40, 26); g.lineTo(10, 30); g.stroke(); g.restore();
     ell(8, 3, 84, 10, 'rgba(0,0,0,.2)');
+    bigWheel(160, -200, 100, night);
     box(-70, -26, 140, 26, '#d8d2c4');
     poly([[-76, -26], [76, -26], [60, -50], [-60, -50]], '#5a6f9a');
     for (let x = -60; x <= 56; x += 14) box(x, -22, 10, 16, night > 0.2 ? '#ffd873' : '#bfe3f5', 1.5);
     box(-12, -16, 24, 16, '#4a5568', 2);
-    [-58, 58].forEach((x, i) => flag(x, -48, i ? '#d9482f' : '#fff'));
     if (snowy()) { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(-60, -50); g.lineTo(60, -50); g.lineTo(66, -42); g.lineTo(-66, -42); g.closePath(); g.fill(); }
-    if (night > 0.2) light(0, -20, 90, '255,200,110');
+    // flagpole
+    const fx = -130; const ft = -270;
+    ell(fx, 3, 18, 6, 'rgba(0,0,0,.22)'); box(fx - 9, -10, 18, 12, '#b9c4d2', 3);
+    box(fx - 3, ft, 6, 262, '#e8edf2', 2); ell(fx, ft - 4, 6, 6, '#ffc93c', true);
+    canadaFlag(fx + 3, ft + 6, 150, night);
+    if (night > 0.2) { light(fx + 80, ft + 40, 120, '255,235,220'); light(0, -20, 90, '255,200,110'); }
   };
   K.ice = () => { // Ice Explorer stands on a patch of ice (the moving bus is a vehicle)
     ell(0, 0, 70, 26, '#e6f7ff', true); g.save(); g.globalAlpha = 0.5; g.beginPath(); g.moveTo(-30, -4); g.lineTo(-6, 4); g.moveTo(12, -8); g.lineTo(34, 2); g.stroke(); g.restore();
@@ -364,8 +448,8 @@ window.BJ_SPRITES = function (R) {
   K.center_default = K.view;
 
   // draw a place and return its local top (so the caller can place the pin and the hit box)
-  const TOPS = { town: 70, castle: 118, lodge: 70, lift: 150, chair: 120, spring: 36, cave: 50, hoodoo: 86, rail: 60, station: 76, dome: 60, center: 56, ice: 24, skywalk: 54, ochre: 20, tea: 44, wild: 34, hike: 36, bridge: 40, pools: 22, lake: 34, view: 34, falls: 78, cafe: 38 };
-  const WIDE = { town: 70, castle: 80, lodge: 62, lift: 130, chair: 120, center: 80, station: 60, falls: 50, rail: 52, hoodoo: 52, ice: 70, skywalk: 66, spring: 50 };
+  const TOPS = { town: 70, castle: 118, lodge: 70, lift: 150, chair: 120, spring: 36, cave: 50, hoodoo: 86, rail: 60, station: 76, dome: 60, center: 320, ice: 24, skywalk: 54, ochre: 20, tea: 44, wild: 34, hike: 36, bridge: 40, pools: 22, lake: 34, view: 34, falls: 78, cafe: 38 };
+  const WIDE = { town: 70, castle: 80, lodge: 62, lift: 130, chair: 120, center: 260, station: 60, falls: 50, rail: 52, hoodoo: 52, ice: 70, skywalk: 66, spring: 50 };
   function place(b, X, Y, k, night) {
     const fn = K[b.kind] || K.view;
     at(X, Y, k, fn, b, night);
@@ -479,12 +563,36 @@ window.BJ_SPRITES = function (R) {
     if (R.env.n > 0.3) R.litList.push([X + 14 * k * (dir >= 0 ? 1 : -1), Y - 5 * k, 22 * k, '255,240,170']);
     c.sx = X; c.sy = Y; c.sk = k;
   }
+  // Brewster/Pursuit-style Ice Explorer: red body, white diagonal panel with a maple leaf, huge six-wheel tyres
   function iceBus(c, X, Y, k, dir) {
+    const sgn = dir >= 0 ? 1 : -1; k *= 1.5;
     at(X, Y, k, () => {
-      g.scale(dir >= 0 ? 1 : -1, 1);
-      ell(0, 2, 24, 5, 'rgba(0,0,0,.22)');
-      box(-22, -22, 44, 16, '#f4f4f0', 4); g.fillStyle = '#cfeaff'; g.fillRect(-18, -19, 36, 6); box(-22, -10, 44, 3, '#d9482f');
-      [-14, 0, 14].forEach((x) => { ell(x, -3, 6, 6, '#2b2b3a', true); ell(x, -3, 2.4, 2.4, '#8a8f98'); });
+      g.scale(sgn, 1);
+      ell(0, 3, 40, 6, 'rgba(0,0,0,.24)');
+      // body
+      box(-34, -33, 68, 25, '#d8202f', 5);
+      box(-34, -33, 68, 3.5, '#f4f4f0', 2);
+      // windows with passengers
+      for (let i = 0; i < 7; i++) {
+        const x = -30 + i * 8.3; box(x, -28.5, 7, 9, '#bfe3f5', 1.5);
+        ell(x + 3.5, -21.5, 1.9, 2.1, SKIN[(i * 2) % SKIN.length], true);
+      }
+      // cab at the front
+      box(26, -30, 8, 14, '#bfe3f5', 2); box(31, -16, 5, 5, '#ffe28a', 1);
+      // white slanted panel + maple leaf
+      poly([[-16, -19], [6, -19], [0, -9], [-22, -9]], '#f4f4f0');
+      g.beginPath(); LEAF.forEach((p, i) => { const x = -8 + p[0] * 4.4; const y = -15 + p[1] * 4.4; (i ? g.lineTo(x, y) : g.moveTo(x, y)); }); g.closePath(); g.fillStyle = '#d8202f'; g.fill();
+      if (k > 0.6) {
+        g.save(); g.translate(17, -12); g.scale(sgn, 1); g.font = '700 4.2px Fredoka, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText('ICE EXPLORER', 0, 0); g.restore();
+      }
+      // big knobbly tyres
+      [-26, -10, 22].forEach((x) => {
+        ell(x, -7, 8.4, 8.4, '#26262e', true);
+        g.save(); g.strokeStyle = '#4a4a56'; g.lineWidth = 1.4; g.beginPath();
+        for (let a = 0; a < 12; a++) { const an = a * TAU / 12; g.moveTo(x + Math.cos(an) * 6.4, -7 + Math.sin(an) * 6.4); g.lineTo(x + Math.cos(an) * 8.4, -7 + Math.sin(an) * 8.4); }
+        g.stroke(); g.restore();
+        ell(x, -7, 3.8, 3.8, '#f4f4f0', true); ell(x, -7, 1.3, 1.3, '#8a8f98');
+      });
     });
     c.sx = X; c.sy = Y; c.sk = k;
   }

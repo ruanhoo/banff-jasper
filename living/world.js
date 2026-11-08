@@ -190,7 +190,7 @@
   const RAIL = [{ id: 'cp', line: mkLine(ribbon(['yoho', 'louise', 'bvp', 'banff'], -60, 5)) }];
 
   /* ---------- glaciers (ice tongues beside a place): [dx, dy, rx, ry, rot] ---------- */
-  const GL_DEF = { athglacier: [-80, -230, 190, 110, -0.5], icefield: [-260, -130, 210, 110, 0.35], lakelouise: [0, 0, 0, 0, 0], angel: [-20, -170, 130, 80, 0], crowfoot: [60, -140, 90, 60, 0.2], sixglaciers: [-60, -130, 120, 76, 0], parker: [-120, -90, 150, 70, 0.2], numti: [-120, -150, 130, 70, 0] };
+  const GL_DEF = { athglacier: [-80, -230, 190, 110, -0.5], icefield: [-480, -170, 330, 125, 0.08], lakelouise: [0, 0, 0, 0, 0], angel: [-20, -170, 130, 80, 0], crowfoot: [60, -140, 90, 60, 0.2], sixglaciers: [-60, -130, 120, 76, 0], parker: [-120, -90, 150, 70, 0.2], numti: [-120, -150, 130, 70, 0] };
   const GLACIERS = [];
   Object.keys(GL_DEF).forEach((id) => {
     const p = P[id]; const d = GL_DEF[id]; if (!p || !d[2]) return;
@@ -198,6 +198,25 @@
   });
   // Victoria glacier sits beyond the far end of Lake Louise
   { const L = LAKES.find((q) => q.id === 'lakelouise'); if (L) { const a = Math.atan2(L.y - L.place.y, L.x - L.place.x); GLACIERS.push({ id: 'victoria', x: L.x + Math.cos(a) * (L.rx + 90), y: L.y + Math.sin(a) * (L.rx + 90) * 0.7 - 70, rx: 150, ry: 90, rot: 0.2 }); } }
+
+  /* ---------- Columbia Icefield showpiece: iced mountain, meltwater streams, pond ---------- */
+  const HERO = { dx: -760, dy: -230, w: 700, h: 830, fan: [-0.17, 0.03, 0.2] };
+  const MELT = (() => {
+    const p = P.icefield; if (!p) return null;
+    const wf = HERO.w * 0.9; const bx = p.x + HERO.dx; const by = p.y + HERO.dy;
+    const pond = { x: p.x - 230, y: p.y - 105, rx: 74, ry: 30 };
+    const streams = HERO.fan.map((a, si) => {
+      const x0 = bx + a * wf; const y0 = by; const pts = [];
+      for (let i = 0; i <= 26; i++) {
+        const t = i / 26; const w = Math.sin(t * Math.PI);
+        pts.push([x0 + (pond.x - x0) * t + Math.sin(t * Math.PI * 3 + si * 2) * 34 * w, y0 + (pond.y - y0) * Math.pow(t, 0.8) + Math.cos(t * Math.PI * 2.4 + si) * 18 * w]);
+      }
+      return pts;
+    });
+    const out = []; const ath = RIVERS.find((r) => r.id === 'ath'); const jx = ath ? ath.pts[0][0] : p.x - 150; const jy = ath ? ath.pts[0][1] : p.y - 150;
+    for (let i = 0; i <= 8; i++) { const t = i / 8; out.push([pond.x + (jx - pond.x) * t + Math.sin(t * 6) * 8, pond.y + (jy - pond.y) * t]); }
+    return { pond, streams, out, fan: HERO.fan, base: [bx, by] };
+  })();
 
   /* ---------- bounds and blocked-cell mask ---------- */
   const ks = Object.keys(HUBS);
@@ -215,7 +234,8 @@
   RAIL.forEach((r) => { for (let s = 0; s <= r.line.len; s += 22) { const q = posAt(r.line, s); disc(q[0], q[1], 30, 1); } });
   RIVERS.forEach((r) => r.pts.forEach((q) => disc(q[0], q[1], 40, 2)));
   LAKES.forEach((L) => { const R = Math.max(L.rx, L.ry) + 40; for (let a = -R; a <= R; a += 20) for (let b = -R; b <= R; b += 20) { const c = Math.cos(-L.rot); const s = Math.sin(-L.rot); const lx = a * c - b * s; const ly = a * s + b * c; if ((lx * lx) / ((L.rx + 40) ** 2) + (ly * ly) / ((L.ry + 40) ** 2) < 1) disc(L.x + a, L.y + b, 14, 2); } });
-  GLACIERS.forEach((G) => disc(G.x, G.y, Math.max(G.rx, G.ry) * 0.8, 2));
+  GLACIERS.forEach((G) => { const n = Math.max(1, Math.ceil(G.rx / (G.ry * 0.6))); for (let i = -n; i <= n; i++) { const t = (i / n) * 0.92; disc(G.x + Math.cos(G.rot) * G.rx * t, G.y + Math.sin(G.rot) * G.rx * t, G.ry * 0.95 + 20, 2); } });
+  if (MELT) { MELT.streams.forEach((st) => st.forEach((q) => disc(q[0], q[1], 34, 2))); MELT.out.forEach((q) => disc(q[0], q[1], 34, 2)); disc(MELT.pond.x, MELT.pond.y, 100, 2); }
   const maskAt = (x, y) => { const i = Math.floor((x - WORLD.x0) / MS); const j = Math.floor((y - WORLD.y0) / MS); return i < 0 || j < 0 || i >= MW || j >= MH ? 0 : mask[j * MW + i]; };
 
   // distance (px) from a point to the nearest road node: used to make faraway peaks bigger and hazier
@@ -227,13 +247,13 @@
   const NAMED = [
     ['rundle', 'fairmont', 520, 170, 560, 520], ['cascade', 'banffave', 120, -520, 420, 470], ['sulphur', 'gondola', -80, 160, 380, 400],
     ['castle', 'castle', 0, -170, 560, 520], ['victoria', 'lakelouise', -420, -240, 480, 560], ['temple', 'moraine', -160, 190, 420, 520],
-    ['tenpeaks', 'moraine', 220, -190, 640, 540], ['chephren', 'waterfowl', -230, -200, 420, 520], ['columbia', 'icefield', -520, -250, 520, 640],
+    ['tenpeaks', 'moraine', 220, -190, 640, 540], ['chephren', 'waterfowl', -230, -200, 420, 520], ['columbia', 'icefield', HERO.dx, HERO.dy, HERO.w, HERO.h],
     ['athabasca', 'athglacier', -160, -310, 440, 540], ['whistlers', 'skytram', -230, -160, 430, 460], ['pyramid', 'pyramid', 120, -250, 360, 430],
     ['cavell', 'cavell', -90, -260, 560, 640], ['robson', 'robson', 0, -300, 600, 720], ['kerkeslin', 'athfalls', 330, 160, 380, 420],
     ['edith', 'jasper', 610, 120, 440, 420], ['norquay', 'norquay', 100, -170, 420, 450], ['lefroy', 'lakelouise', -280, 240, 340, 520],
   ];
   const PEAKS = [];
-  NAMED.forEach(([key, pid, dx, dy, w, h]) => { const p = P[pid]; if (p) PEAKS.push({ x: p.x + dx, y: p.y + dy, w: w * 0.9, h: h * 0.72, seed: PEAKS.length * 5 + 1, key, named: true, far: 0 }); });
+  NAMED.forEach(([key, pid, dx, dy, w, h]) => { const p = P[pid]; if (p) PEAKS.push({ x: p.x + dx, y: p.y + dy, w: key === "columbia" ? w : w * 0.9, h: key === "columbia" ? h : h * 0.72, seed: PEAKS.length * 5 + 1, key, named: true, far: 0 }); });
   for (let j = Math.floor(WORLD.y0 / 210); j * 210 < WORLD.y1; j++) {
     for (let i = Math.floor(WORLD.x0 / 210); i * 210 < WORLD.x1; i++) {
       if (h2(i, j, 21) > 0.5) continue;
@@ -247,6 +267,7 @@
       PEAKS.push({ x, y, w, h, seed: i * 131 + j * 17, far, named: false });
     }
   }
+  PEAKS.forEach((pk) => { if (pk.key === 'columbia') pk.hero = true; });
   PEAKS.sort((a, b) => a.y - b.y);
 
   /* ---------- walking graph inside each hub (a minimum spanning tree over the places) ---------- */
@@ -272,5 +293,5 @@
     return out;
   }
 
-  window.BJ_WORLD = { HUBS, EDGES, ROADS, LAKES, RIVERS, RAIL, GLACIERS, WORLD, PEAKS, PLACES, P, KIND, kindOf, h2, vnoise, rng, mkLine, posAt, hubRoute, roadPoints, walkPath, WALK, maskAt, inLake, roadDist, byHub, LAKE_DEF, TAU };
+  window.BJ_WORLD = { MELT, HUBS, EDGES, ROADS, LAKES, RIVERS, RAIL, GLACIERS, WORLD, PEAKS, PLACES, P, KIND, kindOf, h2, vnoise, rng, mkLine, posAt, hubRoute, roadPoints, walkPath, WALK, maskAt, inLake, roadDist, byHub, LAKE_DEF, TAU };
 })();
