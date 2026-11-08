@@ -66,7 +66,7 @@
   var API = 'https://en.wikipedia.org/api/rest_v1/page/summary/';
   var MEDIA = 'https://en.wikipedia.org/api/rest_v1/page/media-list/';
   var INFO = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=960&titles=';
-  var KEY = 'bjphoto2:', KEY_MORE = 'bjmore2:';
+  var KEY = 'bjphoto2:', KEY_MORE = 'bjmore3:';
   var MAX = 6, EVERY = 4500;
   var BAD = /\b(map|maps|logo|flag|icon|diagram|chart|locator|symbol|seal|plaque|poster|stamp)\b|coat of arms/i;
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -97,7 +97,37 @@
     return mem[id];
   }
 
-  // More photos from the same article, in the order its editors placed them. Only large landscape JPEGs; no maps, logos or flags.
+  // Keep large landscape JPEGs only; imageinfo pages (keyed by title) -> slide list.
+  function usable(pages, files, bad) {
+    var by = {}, out = [];
+    Object.keys(pages || {}).forEach(function (k) { by[pages[k].title] = pages[k]; });
+    files.forEach(function (f) {
+      var pg = by[f.replace(/_/g, ' ')], ii = pg && pg.imageinfo && pg.imageinfo[0];
+      if (!ii || ii.mime !== 'image/jpeg' || ii.width < 1200 || !ii.height) return;
+      var ratio = ii.width / ii.height;
+      if (ratio < 1.25 || ratio > 3) return;
+      var name = f.replace(/^File:/, '').replace(/_/g, ' ');
+      if (bad && bad.test(name)) return;
+      out.push({ src: ii.thumburl, name: name, page: 'https://commons.wikimedia.org/wiki/' + encodeURI(f.replace(/ /g, '_')) });
+    });
+    return out;
+  }
+  var HAZE = /smoke|haze|wildfire|obscured|night/i;
+
+  // Some articles carry only one picture; top up from a Wikimedia Commons search on the article title.
+  function search(title) {
+    var q = title.replace(/[(),]/g, ' ').replace(/\s+/g, ' ').trim() + ' filetype:bitmap';
+    return fetch('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=960&gsrsearch=' + encodeURIComponent(q))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var pages = (d && d.query && d.query.pages) || {};
+        var files = Object.keys(pages).map(function (k) { return pages[k]; }).sort(function (a, b) { return a.index - b.index; }).map(function (x) { return x.title; });
+        return usable(pages, files, HAZE);
+      })
+      .catch(function () { return []; });
+  }
+
+  // More photos from the same article, in the order its editors placed them, then a Commons search if that is thin.
   function more(id) {
     var title = WIKI[id];
     if (!title) return Promise.resolve([]);
@@ -111,21 +141,19 @@
           .map(function (it) { return it.title; }).slice(0, 16);
         if (!files.length) return [];
         return fetch(INFO + encodeURIComponent(files.join('|'))).then(function (r) { return r.ok ? r.json() : null; }).then(function (q) {
-          var pages = (q && q.query && q.query.pages) || {}, by = {};
-          Object.keys(pages).forEach(function (k) { by[pages[k].title] = pages[k]; });
-          var out = [];
-          files.forEach(function (f) {
-            var pg = by[f.replace(/_/g, ' ')], ii = pg && pg.imageinfo && pg.imageinfo[0];
-            if (!ii || ii.mime !== 'image/jpeg' || ii.width < 1200 || !ii.height) return;
-            var ratio = ii.width / ii.height;
-            if (ratio < 1.25 || ratio > 3) return;
-            out.push({ src: ii.thumburl, name: f.replace(/^File:/, '').replace(/_/g, ' '), page: 'https://commons.wikimedia.org/wiki/' + encodeURI(f.replace(/ /g, '_')) });
-          });
-          store(KEY_MORE + id, out);
+          return usable(q && q.query && q.query.pages, files, null);
+        });
+      })
+      .catch(function () { return []; })
+      .then(function (out) {
+        if (out.length >= 3) return out;
+        return search(title).then(function (extra) {
+          var seen = {}; out.forEach(function (o) { seen[o.name] = 1; });
+          extra.forEach(function (o) { if (!seen[o.name]) { seen[o.name] = 1; out.push(o); } });
           return out;
         });
       })
-      .catch(function () { delete memMore[id]; return []; });
+      .then(function (out) { if (out.length) store(KEY_MORE + id, out); return out; });
     return memMore[id];
   }
 
