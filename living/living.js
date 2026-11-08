@@ -362,7 +362,7 @@
       `<p>${esc(ptext(p, 'blurb'))}</p><div class="tip">💡 ${esc(ptext(p, 'tip'))}</div>` +
       `<div class="acts"><button class="btn" data-a="fav" type="button">${favs.has(p.id) ? tx('saved') : tx('save')}</button>` +
       `<button class="btn" data-a="route" type="button">${planSel.has(p.id) ? tx('inRoute') : tx('addRoute')}</button>` +
-      `<a class="btn" href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}" target="_blank" rel="noopener">${esc(tx('osm'))}</a></div>`, col + '99', p.emoji);
+      `<a class="btn" href="${BJ_MAP.url(p.lat, p.lng)}" target="_blank" rel="noopener">${esc(BJ_MAP.label(lang))}</a></div>`, col + '99', p.emoji);
     if (window.BJ_PHOTO) window.BJ_PHOTO.fill(c.querySelector('.photo'), p.id, () => sel && sel.p === p);
     c.querySelector('[data-a="fav"]').addEventListener('click', () => { if (favs.has(p.id)) favs.delete(p.id); else favs.add(p.id); saveFavs(); placeCard(p); renderList(); renderPlanList(); });
     c.querySelector('[data-a="route"]').addEventListener('click', () => { if (planSel.has(p.id)) planSel.delete(p.id); else planSel.add(p.id); placeCard(p); renderPlanList(); updPlanCount(); });
@@ -475,7 +475,7 @@
     const warns = [];
     if (km > 220) warns.push(tx('tripBlock')); if (order.some((p) => p.far)) warns.push(tx('farWarn')); if (clock - t0 > 600) warns.push(tx('longDay')); if (late) warns.push(tx('late'));
     out.innerHTML = `<div class="sum">${esc(fmt(tx('summary'), { n: order.length, km: Math.round(km), t: hhmm(clock) }))}</div>` + warns.map((w) => `<div class="warn">⚠️ ${esc(w)}</div>`).join('') +
-      `<ul class="tl">${rows.map((r) => `${r.leg ? `<li class="leg">${tx(legKey)} ${Math.round(r.leg.m)} min · ${Math.round(r.leg.d)} km</li>` : ''}<li class="stop"><span class="no">${r.i + 1}</span><div><div class="tm">${hhmm(r.arrive)} <small>· ${esc(tx('stay'))} ${r.stay} min</small></div><div class="nm${r.isLate ? ' late' : ''}">${r.p.emoji} ${esc(nameOf(r.p))}</div><a href="https://www.openstreetmap.org/?mlat=${r.p.lat}&mlon=${r.p.lng}#map=17/${r.p.lat}/${r.p.lng}" target="_blank" rel="noopener">${esc(tx('osm'))}</a></div></li>`).join('')}</ul>`;
+      `<ul class="tl">${rows.map((r) => `${r.leg ? `<li class="leg">${tx(legKey)} ${Math.round(r.leg.m)} min · ${Math.round(r.leg.d)} km</li>` : ''}<li class="stop"><span class="no">${r.i + 1}</span><div><div class="tm">${hhmm(r.arrive)} <small>· ${esc(tx('stay'))} ${r.stay} min</small></div><div class="nm${r.isLate ? ' late' : ''}">${r.p.emoji} ${esc(nameOf(r.p))}</div><a href="${BJ_MAP.url(r.p.lat, r.p.lng)}" target="_blank" rel="noopener">${esc(BJ_MAP.label(lang))}</a></div></li>`).join('')}</ul>`;
     planRoute = { stops: order, segs };
     let x0 = 1e9; let y0 = 1e9; let x1 = -1e9; let y1 = -1e9; const add = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
     order.forEach((p) => add(p.x, p.y)); segs.forEach((s) => s.forEach((q) => add(q[0], q[1])));

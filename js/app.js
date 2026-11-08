@@ -80,7 +80,7 @@
   let activeId = null;
   let filter = 'all';
 
-  const mapsLink = (p) => `https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`;
+  const mapsLink = (p) => BJ_MAP.url(p.lat, p.lng);
 
   const markerTitle = (p) => `${nameOf(p)} (${tagOf(p)})`;
   // popup.update() would re-set the HTML and wipe the photo, so only re-measure and re-position the popup.
@@ -89,7 +89,7 @@
     `<div class="popup__photo" data-photo="${p.id}" hidden></div>` +
     `<div class="popup__title" lang="${lang}">${p.emoji} ${esc(nameOf(p))}</div>` +
     `<div class="popup__zh" lang="${lang === 'zh' ? 'en' : 'zh'}">${esc(subNameOf(p))}</div>` +
-    `<a class="popup__link" href="${mapsLink(p)}" target="_blank" rel="noopener">${esc(t('openOsm'))}</a>`;
+    `<a class="popup__link" href="${mapsLink(p)}" target="_blank" rel="noopener">${esc(BJ_MAP.label(lang))}</a>`;
 
   function makeMarker(p) {
     // Round trail-sign style pins, coloured by category (see .pin styles in css/style.css).
