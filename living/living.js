@@ -357,12 +357,13 @@
   function placeCard(p) {
     const area = areaOf(p); const col = AREA_COL[area];
     const c = showCard(
-      `<h3>${esc(nameOf(p))}</h3><div class="sub" lang="${lang === 'zh' ? 'en' : 'zh'}">${esc(subOf(p))}</div>` +
+      `<div class="photo" data-photo="${p.id}" hidden></div><h3>${esc(nameOf(p))}</h3><div class="sub" lang="${lang === 'zh' ? 'en' : 'zh'}">${esc(subOf(p))}</div>` +
       `<div class="tags"><span class="tag" style="background:${CAT_COL[p.cat]}">${p.emoji} ${esc(catName(p.cat))}</span><span class="tag" style="background:${col}">${esc(tx('areas')[area])}${p.far ? esc(tx('dayTrip')) : ''}</span></div>` +
       `<p>${esc(ptext(p, 'blurb'))}</p><div class="tip">💡 ${esc(ptext(p, 'tip'))}</div>` +
       `<div class="acts"><button class="btn" data-a="fav" type="button">${favs.has(p.id) ? tx('saved') : tx('save')}</button>` +
       `<button class="btn" data-a="route" type="button">${planSel.has(p.id) ? tx('inRoute') : tx('addRoute')}</button>` +
       `<a class="btn" href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}" target="_blank" rel="noopener">${esc(tx('osm'))}</a></div>`, col + '99', p.emoji);
+    if (window.BJ_PHOTO) window.BJ_PHOTO.fill(c.querySelector('.photo'), p.id, () => sel && sel.p === p);
     c.querySelector('[data-a="fav"]').addEventListener('click', () => { if (favs.has(p.id)) favs.delete(p.id); else favs.add(p.id); saveFavs(); placeCard(p); renderList(); renderPlanList(); });
     c.querySelector('[data-a="route"]').addEventListener('click', () => { if (planSel.has(p.id)) planSel.delete(p.id); else planSel.add(p.id); placeCard(p); renderPlanList(); updPlanCount(); });
   }
