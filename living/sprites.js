@@ -549,18 +549,94 @@ window.BJ_SPRITES = function (R) {
   }
 
   /* ---------- vehicles ---------- */
+  /* ---------- road vehicles (all face +x; ground is y = 0) ---------- */
+  const GLASS = '#bfe3f5'; const TYRE = '#26262e';
+  function wheel(x, r, hub) { ell(x, -r, r, r, TYRE, true); ell(x, -r, r * 0.5, r * 0.5, hub || '#c9ced6'); }
+  function flare(x, r, col) { ell(x, -r, r + 1.6, r + 1.6, shade(col, -0.28)); }
+  function glass(x, y, w, h, c) { g.fillStyle = c || GLASS; g.fillRect(x, y, w, h); }
+  function lamp(x, y) { g.fillStyle = '#fff3a0'; g.fillRect(x, y, 2.4, 2.2); }
+  const V = {};
+  V.rv = (c) => { // big camper van with a kayak on the roof
+    const bb = -7; wheel(-14, 5.4); wheel(15, 5.4);
+    box(-24, bb - 24, 36, 24, '#f4f1ea', 4); box(8, bb - 29, 16, 9, '#f4f1ea', 3); box(10, bb - 17, 17, 17, '#f4f1ea', 3);
+    glass(20, bb - 15, 5, 8); glass(-18, bb - 18, 9, 7); glass(-5, bb - 18, 9, 7); box(-24, bb - 8, 51, 3.5, c.col, 1.5); box(-24, bb - 4, 51, 1.8, shade(c.col, 0.3), 1);
+    box(-3, bb - 29.5, 14, 4, '#cfd5dc', 1.5); // roof AC
+    g.beginPath(); g.moveTo(-23, bb - 26); g.quadraticCurveTo(-8, bb - 33, 8, bb - 27); g.quadraticCurveTo(-8, bb - 25, -23, bb - 26); g.fillStyle = '#e8503a'; g.fill(); g.stroke();
+    wheel(-14, 5.4); wheel(15, 5.4); lamp(26, bb - 6);
+  };
+  V.jeep = (c) => { // Wrangler: boxy, flat roof, round lamps, 7-slot grille, spare on the tailgate; some lifted on big tyres
+    const lift = c.lift; const r = lift ? 7.2 : 4.6; const bb = -r * 1.3; const col = c.col; const top = c.top || shade(col, -0.2);
+    if (lift) { flare(-9.5, r, col); flare(10, r, col); }
+    box(-16, bb - 8, 32, 8, col, 1.5);                       // body and hood
+    box(-12, bb - 16, 17, 8.5, top, 1.5);                    // flat-roof cabin
+    glass(-9.5, bb - 14.6, 5, 4.6); glass(-3.5, bb - 14.6, 7.2, 4.6);
+    g.fillStyle = shade(col, -0.3); g.fillRect(5.2, bb - 15, 1.6, 7);  // windscreen pillar
+    box(-18.6, bb - 7.6, 2.8, 7.2, TYRE, 1.2); ell(-17.2, bb - 4, 0.9, 0.9, '#c9ced6'); // tailgate spare
+    box(14.6, bb - 7, 2.4, 6, '#2b2b3a', 0.8); g.fillStyle = '#e8e8e2'; for (let i = 0; i < 3; i++) g.fillRect(15, bb - 6.2 + i * 1.8, 1.6, 0.8);
+    ell(13.2, bb - 8.4, 1.7, 1.7, '#fff3a0', true);
+    if (lift) { g.fillStyle = '#26262e'; g.fillRect(-12, bb, 24, 2.4); }
+    wheel(-9.5, r); wheel(10, r);
+  };
+  V.pickup = (c) => { // F-150 Raptor (orange/blue/grey, lifted) or Tundra (stock height)
+    const rap = c.model === 'raptor'; const r = rap ? 7.8 : 6; const bb = -r * 1.22; const col = c.col;
+    flare(-12, r, col); flare(13, r, col);
+    box(-21, bb - 9, 19, 9, col, 2); box(-21, bb - 11, 19, 2.5, shade(col, -0.25), 1); // bed
+    box(-3, bb - 10, 25, 10, col, 3); box(-1, bb - 18, 14, 8, shade(col, 0.1), 2.5); glass(1, bb - 16.6, 10.5, 5.4);
+    if (rap) { g.fillStyle = '#fff3a0'; g.fillRect(2, bb - 20, 9, 2); box(13, bb - 10.5, 6, 1.8, shade(col, -0.35), 1); g.fillStyle = '#f4f4f0'; g.fillRect(-20, bb - 6, 40, 1.4); }
+    else { box(20.5, bb - 8, 3, 6.5, '#dfe3ea', 1); g.fillStyle = shade(col, -0.3); g.fillRect(-2, bb - 3, 3, 3); }
+    lamp(20.8, bb - 9.4); wheel(-12, r); wheel(13, r);
+  };
+  V.m4 = (c) => { // open-top coupe, driver in the wind
+    const r = 4.4; const bb = -4.4; const col = c.col;
+    poly([[-17, bb], [17, bb], [17.5, bb - 3.5], [9, bb - 5.8], [-3, bb - 6.5], [-14, bb - 6.2], [-17, bb - 3.5]], col);
+    poly([[0.5, bb - 6.5], [3.5, bb - 11], [5.2, bb - 11], [7.6, bb - 6]], GLASS);
+    box(-11, bb - 9.5, 6, 3.8, '#2b2b3a', 1.5); ell(-5.4, bb - 11.4, 2.5, 2.5, SKIN[c.id % SKIN.length], true); g.fillStyle = HAIR[c.id % HAIR.length]; g.beginPath(); g.arc(-5.4, bb - 12, 2.5, Math.PI, TAU); g.fill();
+    g.fillStyle = '#4aa3ff'; g.fillRect(-1, bb - 3.6, 2.6, 1.3); g.fillStyle = '#2a3b8f'; g.fillRect(1.6, bb - 3.6, 2.6, 1.3); g.fillStyle = '#e8303a'; g.fillRect(4.2, bb - 3.6, 2.6, 1.3);
+    g.fillStyle = '#26262e'; g.fillRect(15.2, bb - 3.6, 1.4, 2.6); g.fillRect(12.8, bb - 3.6, 1.4, 2.6); lamp(15, bb - 5.4);
+    wheel(-10.5, r); wheel(10.5, r);
+  };
+  V.x5 = (c) => { // family SUV
+    const r = 5.2; const bb = -6.2; const col = c.col;
+    box(-18, bb - 9, 36, 9, col, 3); poly([[-13, bb - 9], [-9, bb - 17], [10, bb - 17], [15, bb - 9]], shade(col, 0.08));
+    poly([[-11.5, bb - 9.4], [-8.6, bb - 15.4], [-1, bb - 15.4], [-1, bb - 9.4]], GLASS); poly([[1.2, bb - 9.4], [1.2, bb - 15.4], [9, bb - 15.4], [12.6, bb - 9.4]], GLASS);
+    g.fillStyle = shade(col, -0.4); g.fillRect(-12, bb - 17.8, 22, 1.4); g.fillStyle = '#2b2b3a'; g.fillRect(16.4, bb - 7, 1.6, 4); g.fillRect(14.2, bb - 7, 1.6, 4); lamp(16.4, bb - 8.6);
+    wheel(-11, r); wheel(11.5, r);
+  };
+  V.gls = (c) => { // big three-row luxury SUV
+    const r = 6; const bb = -7; const col = c.col;
+    box(-22, bb - 11, 44, 11, col, 3.5); poly([[-18, bb - 11], [-14, bb - 20], [12, bb - 20], [18, bb - 11]], shade(col, 0.1));
+    poly([[-16, bb - 11.4], [-13, bb - 18.4], [-6, bb - 18.4], [-6, bb - 11.4]], GLASS); poly([[-4.4, bb - 11.4], [-4.4, bb - 18.4], [4, bb - 18.4], [4, bb - 11.4]], GLASS); poly([[5.6, bb - 11.4], [5.6, bb - 18.4], [11, bb - 18.4], [15.6, bb - 11.4]], GLASS);
+    g.fillStyle = '#dfe3ea'; g.fillRect(-21, bb - 3.2, 42, 1.3); g.fillRect(-14, bb - 20.8, 25, 1.1);
+    box(19.6, bb - 9, 3.2, 6, '#2b2b3a', 1); ell(21.4, bb - 6, 1.6, 1.6, '#dfe3ea', true); lamp(21.2, bb - 10.8);
+    wheel(-13, r, '#8f98a6'); wheel(13.5, r, '#8f98a6');
+  };
+  V.muscle = (c) => { // American muscle car with racing stripes
+    const r = 4.9; const bb = -5.6; const col = c.col;
+    poly([[-19, bb], [19, bb], [19.5, bb - 3], [13, bb - 5.5], [0, bb - 6], [-17, bb - 6], [-19.5, bb - 3.5]], col);
+    poly([[-9, bb - 6], [-5, bb - 12], [3, bb - 12], [8, bb - 6]], GLASS);
+    g.fillStyle = '#f4f4f0'; g.fillRect(-17, bb - 6, 33, 1.5); g.fillStyle = shade(col, -0.3); g.fillRect(7, bb - 7.4, 6, 1.4); g.fillRect(-21, bb - 8.5, 5, 1.6);
+    lamp(17.4, bb - 4.8); wheel(-12.5, r); wheel(12.5, r);
+  };
+  V.tourbus = (c) => { // long coach with tinted windows
+    const r = 5.4; const bb = -6.4;
+    wheel(-27, r); wheel(-17, r); wheel(23, r);
+    box(-36, bb - 21, 72, 21, '#f4f4f0', 4); box(-36, bb - 7.5, 72, 3.4, c.col, 1.5); box(-36, bb - 3.8, 72, 1.6, shade(c.col, 0.35), 1);
+    for (let i = 0; i < 9; i++) glass(-32 + i * 7.2, bb - 18, 6, 7.5, '#6aa0c8');
+    box(28, bb - 19, 6.5, 12, '#6aa0c8', 2); box(-10, bb - 24, 22, 3.4, '#cfd5dc', 1.5); box(14, bb - 12, 5, 8, '#e8e8e2', 1);
+    lamp(35, bb - 6); wheel(-27, r); wheel(-17, r); wheel(23, r);
+  };
+  const VLEN = { rv: 50, jeep: 32, pickup: 46, m4: 36, x5: 38, gls: 46, muscle: 40, tourbus: 74 };
   function car(c, X, Y, k, dir) {
-    at(X, Y, k * (dir >= 0 ? 1 : 1), () => {
-      g.scale(dir >= 0 ? 1 : -1, 1);
-      ell(0, 1, 11, 3, 'rgba(0,0,0,.2)');
-      if (c.type === 'bus') { box(-15, -14, 30, 12, '#d9482f', 3); g.fillStyle = '#cfeaff'; g.fillRect(-12, -12, 24, 4); box(-15, -4, 30, 2.5, '#ffc93c'); }
-      else if (c.type === 'rv') { box(-13, -15, 26, 13, '#f4f1ea', 3); g.fillStyle = '#cfeaff'; g.fillRect(6, -13, 5, 5); box(-13, -6, 26, 2.5, '#3a8fc7'); }
-      else { box(-9, -8, 18, 6, c.col, 2.5); box(-5, -13, 10, 6, shade(c.col, 0.15), 2.5); g.fillStyle = '#cfeaff'; g.fillRect(-3.4, -12, 6.8, 3.4); }
-      ell(-5.5, -1, 2.6, 2.6, '#2b2b3a', true); ell(5.5, -1, 2.6, 2.6, '#2b2b3a', true);
-      if (R.env.n > 0.3) { g.fillStyle = '#fff3a0'; g.fillRect(c.type === 'bus' ? 14 : 8, -6, 2.5, 2.5); }
-      if (c.jam && Math.sin(R.t * 8 + c.id) > 0) { g.fillStyle = '#ffc93c'; g.fillRect(-10, -9, 2.5, 2.5); }
+    const sc = c.type === 'car' ? 1 : 0.78; const len = c.type === 'car' ? 24 : VLEN[c.type] || 36; const sgn = dir >= 0 ? 1 : -1;
+    at(X, Y, k * sc, () => {
+      g.scale(sgn, 1);
+      ell(0, 1.5, len * 0.58, 4.5, 'rgba(0,0,0,.22)');
+      if (V[c.type]) V[c.type](c);
+      else { box(-9, -8, 18, 6, c.col, 2.5); box(-5, -13, 10, 6, shade(c.col, 0.15), 2.5); g.fillStyle = '#cfeaff'; g.fillRect(-3.4, -12, 6.8, 3.4); ell(-5.5, -1, 2.6, 2.6, '#2b2b3a', true); ell(5.5, -1, 2.6, 2.6, '#2b2b3a', true); }
+      if (R.env.n > 0.3) { g.fillStyle = 'rgba(255,243,160,.9)'; g.fillRect(len / 2 - 2, -9, 4, 2.4); }
+      if (c.jam && Math.sin(R.t * 8 + c.id) > 0) { g.fillStyle = '#ffc93c'; g.fillRect(-len / 2 - 1, -12, 2.6, 2.6); }
     });
-    if (R.env.n > 0.3) R.litList.push([X + 14 * k * (dir >= 0 ? 1 : -1), Y - 5 * k, 22 * k, '255,240,170']);
+    if (R.env.n > 0.3) R.litList.push([X + (len / 2 + 8) * sc * k * sgn, Y - 8 * k, 26 * k * sc, '255,240,170']);
     c.sx = X; c.sy = Y; c.sk = k;
   }
   // Brewster/Pursuit-style Ice Explorer: red body, white diagonal panel with a maple leaf, huge six-wheel tyres
@@ -643,5 +719,5 @@ window.BJ_SPRITES = function (R) {
     g.restore();
   }
 
-  return { at, shade, mix, rr, box, poly, ell, emoji, peakBody, tree, treeLite, place, person, animal, eagle, car, iceBus, canoe, skater, train, cloud, SKIN, HAIR, JACKS, SP, light };
+  return { at, shade, mix, rr, box, poly, ell, emoji, VLEN, peakBody, tree, treeLite, place, person, animal, eagle, car, iceBus, canoe, skater, train, cloud, SKIN, HAIR, JACKS, SP, light };
 };

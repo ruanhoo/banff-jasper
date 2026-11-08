@@ -272,14 +272,27 @@
   /* ---------- cars, trains, ice explorer ---------- */
   const cars = [];
   const CAR_COLS = ['#e8503a', '#3a8fc7', '#ffc93c', '#3fb68b', '#8f7be0', '#f4f1ea', '#ff9a4d', '#2b6cb0'];
-  for (let i = 0; i < 30; i++) {
-    const ri = Math.floor(rnd() * ROADS.length); const type = rnd() < 0.12 ? 'bus' : rnd() < 0.2 ? 'rv' : 'car';
-    cars.push({ id: uid++, ri, dir: rnd() < 0.5 ? 1 : -1, s: rnd() * ROADS[ri].line.len, v: 105 + rnd() * 55, type, col: pick(CAR_COLS), x: 0, y: 0, ang: 0, jam: false, jt: 0 });
+  // the traffic mix on the parkway: campers, Wranglers (some lifted), pickups, a convertible, SUVs, muscle cars and coaches
+  const JEEP_COLS = ['#26262e', '#f4f4f0', '#ffd23c', '#3a8f4a'];
+  function carSpec() {
+    const r = rnd();
+    if (r < 0.14) return { type: 'rv', col: pick(['#3a8fc7', '#d9482f', '#3fb68b', '#ffc93c', '#8f7be0']) };
+    if (r < 0.34) { const col = pick(JEEP_COLS); return { type: 'jeep', col, lift: rnd() < 0.45, top: col === '#26262e' ? '#3a3a46' : rnd() < 0.5 ? '#26262e' : undefined }; }
+    if (r < 0.48) return rnd() < 0.5 ? { type: 'pickup', model: 'raptor', col: pick(['#ff7a1a', '#6e7480', '#2b5fbf', '#f4f4f0']) } : { type: 'pickup', model: 'tundra', col: pick(['#f4f4f0', '#aeb4be', '#c0392b', '#26262e']) };
+    if (r < 0.56) return { type: 'm4', col: pick(['#2f6fe0', '#ffd23c', '#e8303a', '#f4f4f0', '#8f7be0']) };
+    if (r < 0.70) return { type: 'x5', col: pick(['#26262e', '#f4f4f0', '#8a909c', '#2b4a7a', '#7a4a3a']) };
+    if (r < 0.78) return { type: 'gls', col: pick(['#26262e', '#c9ced6', '#f4f4f0', '#3a3a46']) };
+    if (r < 0.90) return { type: 'muscle', col: pick(['#ff7a1a', '#ffd23c', '#e8303a', '#26262e', '#2f6fe0', '#3fb68b']) };
+    return { type: 'tourbus', col: pick(['#3a8fc7', '#d9482f', '#2f7d5b', '#8f7be0']) };
+  }
+  for (let i = 0; i < 40; i++) {
+    const ri = Math.floor(rnd() * ROADS.length); const sp = carSpec();
+    cars.push({ id: uid++, ri, dir: rnd() < 0.5 ? 1 : -1, s: rnd() * ROADS[ri].line.len, v: 105 + rnd() * 55, ...sp, len: S.VLEN[sp.type] * 0.78, x: 0, y: 0, ang: 0, jam: false, jt: 0 });
   }
   function updCar(c, dt) {
     const line = ROADS[c.ri].line; const q = W.posAt(line, c.s); const jm = jamAt(q[0], q[1]); c.jam = !!jm;
     let v = c.v * (jm ? 0.12 : 1);
-    for (const o of cars) { if (o !== c && o.ri === c.ri && o.dir === c.dir) { const gap = (o.s - c.s) * c.dir; if (gap > 0 && gap < 46) v = Math.min(v, o.v * 0.8); } }
+    for (const o of cars) { if (o !== c && o.ri === c.ri && o.dir === c.dir) { const gap = (o.s - c.s) * c.dir; if (gap > 0 && gap < (c.len + o.len) / 2 + 14) v = Math.min(v, o.v * 0.8); } }
     c.s += c.dir * v * dt;
     if (jm && time - c.jt > 40) { c.jt = time; if (rnd() < 0.5) addLog(tx('logJam')); }
     if (c.s > line.len || c.s < 0) {
@@ -562,6 +575,53 @@
     // hub plazas
     Object.keys(HUBS).forEach((h) => { const H = HUBS[h]; if (!inView(H.x, H.y, 140 * cam.z + 40)) return; g.beginPath(); g.ellipse(sx(H.x), sy(H.y), 52 * cam.z, 52 * cam.z * cam.tilt, 0, 0, TAU); g.fillStyle = '#7b7f8c'; g.fill(); g.lineWidth = Math.max(1.5, 3 * cam.z); g.strokeStyle = INK; g.stroke(); });
   }
+  // Highway 93 (Icefields Parkway): painted lettering that follows the road, plus highway shields
+  const HWY93 = (() => {
+    const order = ['louise', 'bowlake', 'crossing', 'icefield', 'sunwapta', 'jasper']; const pts = [];
+    for (let i = 0; i + 1 < order.length; i++) {
+      const r = ROADS.find((q) => (q.a === order[i] && q.b === order[i + 1]) || (q.b === order[i] && q.a === order[i + 1])); if (!r) continue;
+      const seg = r.a === order[i] ? r.line.pts : r.line.pts.slice().reverse(); seg.forEach((q, j) => { if (i && !j) return; pts.push(q); });
+    }
+    return pts;
+  })();
+  function hwyShield(X, Y, sz) {
+    g.save(); g.translate(X, Y); g.scale(sz, sz); g.lineJoin = 'round'; g.lineWidth = 0.1;
+    g.beginPath(); g.moveTo(-0.5, -0.5); g.quadraticCurveTo(0, -0.62, 0.5, -0.5); g.lineTo(0.5, 0.1); g.quadraticCurveTo(0.5, 0.42, 0, 0.62); g.quadraticCurveTo(-0.5, 0.42, -0.5, 0.1); g.closePath();
+    g.fillStyle = '#fffdf6'; g.fill(); g.strokeStyle = INK; g.stroke();
+    g.save(); g.clip(); g.fillStyle = '#d8202f'; g.fillRect(-0.6, -0.7, 1.2, 0.3); g.restore();
+    g.beginPath(); g.moveTo(-0.5, -0.5); g.quadraticCurveTo(0, -0.62, 0.5, -0.5); g.lineTo(0.5, 0.1); g.quadraticCurveTo(0.5, 0.42, 0, 0.62); g.quadraticCurveTo(-0.5, 0.42, -0.5, 0.1); g.closePath(); g.stroke();
+    g.fillStyle = INK; g.font = `700 0.52px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('93', 0, 0.12);
+    g.restore();
+  }
+  function drawHwy() {
+    const z = cam.z; if (z < 0.16 || HWY93.length < 2) return;
+    const P2 = HWY93.map((q) => [sx(q[0]), sy(q[1])]); const cum = [0];
+    for (let i = 1; i < P2.length; i++) cum.push(cum[i - 1] + Math.hypot(P2[i][0] - P2[i - 1][0], P2[i][1] - P2[i - 1][1]));
+    const Ls = cum[cum.length - 1];
+    const at2 = (s) => { s = clamp(s, 0, Ls); let lo = 0; let hi = cum.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; } const a = P2[lo]; const b = P2[hi]; const t = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, Math.atan2(b[1] - a[1], b[0] - a[0])]; };
+    const onScreen = (p, m) => p[0] > -m && p[0] < Wc + m && p[1] > -m && p[1] < Hc + m;
+    const sz = clamp(26 * z, 9, 58); const label = tx('hwyName'); const chars = [...label];
+    g.font = `700 ${sz}px ${FONT}`; const gap = sz * (lang === 'zh' ? 0.5 : 0.22); const ws = chars.map((ch) => g.measureText(ch).width + gap); const Tw = ws.reduce((a, b) => a + b, 0) - gap;
+    const step = Math.max(Tw * 2.6, 380); const n = Math.max(1, Math.floor(Ls / step)); const sh = clamp(36 * z, 14, 64);
+    for (let i = 0; i < n; i++) {
+      const c0 = (i + 0.5) * Ls / n; const cp = at2(c0); if (!onScreen(cp, Tw)) continue;
+      if (Ls / n < Tw * 1.3) continue;
+      const dir = Math.cos(cp[2]) >= 0 ? 1 : -1; let off = -Tw / 2;
+      g.save(); g.font = `700 ${sz}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      chars.forEach((ch, ci) => {
+        const mid = off + (ws[ci] - gap) / 2; off += ws[ci]; const p = at2(c0 + dir * mid);
+        g.save(); g.translate(p[0], p[1]); g.rotate(p[2] + (dir < 0 ? Math.PI : 0));
+        g.fillStyle = 'rgba(0,0,0,.35)'; g.fillText(ch, 0, sz * 0.12);
+        g.lineWidth = sz * 0.3; g.strokeStyle = INK; g.strokeText(ch, 0, 0);
+        const gr = g.createLinearGradient(0, -sz / 2, 0, sz / 2); gr.addColorStop(0, '#fff6c8'); gr.addColorStop(0.5, '#ffd23c'); gr.addColorStop(1, '#ff8a2a');
+        g.fillStyle = gr; g.fillText(ch, 0, 0); g.restore();
+      });
+      g.restore();
+    }
+    // shields between the lettering (and near both ends)
+    const sp = []; for (let i = 0; i <= n; i++) sp.push(clamp(i * Ls / n, Ls * 0.06, Ls * 0.94));
+    sp.forEach((s0) => { const p = at2(s0); if (onScreen(p, sh)) hwyShield(p[0], p[1] - sh * 0.25, sh); });
+  }
   function drawRail() {
     const pts = railLine.pts; g.lineCap = 'butt';
     pathPts(pts, false); g.strokeStyle = INK; g.lineWidth = Math.max(3, 12 * cam.z); g.stroke();
@@ -740,7 +800,7 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0); R.litList.length = 0; R.t = time;
     g.fillStyle = rgb(sea.ground); g.fillRect(0, 0, Wc, Hc);
      const TT = (n, f) => f();
-    TT('tufts', drawTufts); TT('gl', drawGlaciers); TT('lakes', drawLakes); TT('riv', drawRivers); TT('paths', drawPaths); TT('roads', drawRoads); TT('rail', drawRail);
+    TT('tufts', drawTufts); TT('gl', drawGlaciers); TT('lakes', drawLakes); TT('riv', drawRivers); TT('paths', drawPaths); TT('roads', drawRoads); TT('hwy', drawHwy); TT('rail', drawRail);
     TT('world', drawWorld); TT('sky', drawSky); TT('tint', drawTint); TT('ns', drawNightSky); TT('parts', () => drawParts(dt));
     TT('plan', drawPlanRoute); TT('pins', drawPins); TT('labels', drawLabels); TT('portal', drawPortalLabel); TT('bub', () => drawBubbles(dt));
     if (QS.has('perf')) { g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(8, Hc - 30, 150, 22); g.fillStyle = '#fff'; g.font = '12px monospace'; g.textAlign = 'left'; g.fillText(`${fps.toFixed(0)} fps  z ${cam.z.toFixed(2)}`, 14, Hc - 15); }
@@ -929,6 +989,6 @@
   else if (QS.get('follow')) { followTarget(QS.get('follow') === 'aspen' ? aspen : people[0], true); }
   cam.tilt = cam.ttilt;
   if (!QS.has('nointro') && !store.get(INTRO_KEY, '')) openIntro();
-  window.__bj = { cam, people, animals, cars, trains, aspen, PORTAL, JAMS, env, sea, statics, setLang, select, jumpTo, get time() { return time; } };
+  window.__bj = { HWY93, cam, people, animals, cars, trains, aspen, PORTAL, JAMS, env, sea, statics, setLang, select, jumpTo, get time() { return time; } };
   requestAnimationFrame(frame);
 })();
