@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hello Banff &amp; Jasper! A cartoon guide to the Rockies</title>
+  <meta name="description" content="A cartoon-style travel guide to Banff and Jasper National Parks: turquoise lakes, the Icefields Parkway, glaciers, waterfalls, wildlife and mountain food.">
+  <meta name="theme-color" content="#5fd8d0">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%9E%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="vendor/MarkerCluster.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip" href="#explore" data-i18n="skip">Skip to the map</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" data-i18n-aria="brandAria" aria-label="Hello Banff and Jasper home">
+      <span class="brand__icon" aria-hidden="true">🏞️</span>
+      <span class="brand__text" data-i18n="brand">Hello Banff &amp; Jasper!</span>
+    </a>
+    <div class="header__right">
+      <nav class="nav" aria-label="Main">
+        <a href="#explore" data-i18n="navMap">Map</a>
+        <a href="#tips" data-i18n="navTips">Tips</a>
+        <a href="living/index.html" data-i18n="navCity">Living map</a>
+      </nav>
+      <div class="lang" role="group" data-i18n-aria="langAria" aria-label="Language">
+        <button type="button" data-lang="en" lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-lang="zh" lang="zh" aria-pressed="false">中文</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero__copy">
+        <p class="sticker" data-i18n="sticker">Alberta · Canadian Rockies</p>
+        <h1 data-i18n-html="heroTitleHtml">Welcome to <span class="hl">Banff &amp; Jasper!</span></h1>
+        <p class="hero__lead" data-i18n="heroLead">Turquoise lakes, hanging glaciers and one of the most beautiful roads on Earth. Paddle a red canoe on Lake Louise, drive the Icefields Parkway, stand on the Athabasca Glacier and watch for elk, bears and mountain goats.</p>
+        <a class="btn" href="#explore" data-i18n="openMap">🗺️ Open the map</a>
+      </div>
+
+      <div class="hero__art" aria-hidden="true">
+        <svg viewBox="0 0 600 420" xmlns="http://www.w3.org/2000/svg" focusable="false">
+          <g stroke="#2d2a32" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8fd6f5"/><stop offset="1" stop-color="#ffe9c2"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="600" height="420" fill="url(#sky)" stroke="none"/>
+            <g class="sun">
+              <circle cx="496" cy="78" r="58" fill="none" stroke="#ffc93c" stroke-width="10" stroke-dasharray="4 20"/>
+              <circle cx="496" cy="78" r="38" fill="#ffd95a"/>
+              <circle cx="484" cy="72" r="4.5" fill="#2d2a32" stroke="none"/>
+              <circle cx="508" cy="72" r="4.5" fill="#2d2a32" stroke="none"/>
+              <path d="M483 88 Q496 100 509 88" fill="none"/>
+              <circle cx="474" cy="86" r="6" fill="#ff9ebb" stroke="none" opacity=".8"/>
+              <circle cx="518" cy="86" r="6" fill="#ff9ebb" stroke="none" opacity=".8"/>
+            </g>
+            <g class="cloud cloud--a" fill="#fff"><path d="M70 100 q-30 0 -30 -22 q0 -22 28 -22 q6 -22 36 -20 q26 2 28 24 q26 2 24 22 q-2 18 -26 18 z"/></g>
+            <g class="cloud cloud--b" fill="#fff"><path d="M300 56 q-24 0 -24 -17 q0 -17 22 -17 q5 -17 28 -15 q21 2 22 19 q20 2 19 17 q-2 13 -20 13 z"/></g>
+
+            <!-- far ridge -->
+            <path d="M-10 250 L60 190 L110 225 L170 150 L240 230 L300 175 L360 235 L430 160 L500 225 L560 185 L610 240 V300 H-10 Z" fill="#a9c4e4"/>
+            <!-- big jagged peaks -->
+            <path d="M-10 280 L70 150 L110 195 L170 90 L230 190 L270 150 L330 280 Z" fill="#7d9ec8"/>
+            <path d="M250 280 L340 110 L380 170 L440 60 L520 190 L560 150 L610 280 Z" fill="#7391bb"/>
+            <!-- snow caps and lit faces -->
+            <path d="M170 90 L146 128 L162 122 L174 140 L188 122 L204 132 Z M440 60 L412 106 L430 100 L444 122 L460 102 L478 114 Z M340 110 L322 142 L336 138 L346 152 L358 138 L368 146 Z M70 150 L52 178 L66 172 L76 186 L88 172 L98 180 Z" fill="#fff"/>
+            <path d="M170 90 L230 190 L196 190 L190 140 Z M440 60 L520 190 L470 190 L460 120 Z" fill="#5d7cab" stroke="none" opacity=".55"/>
+            <!-- glacier -->
+            <path d="M400 150 Q430 190 410 240 Q440 250 470 230 Q460 190 450 130 Z" fill="#e6f7ff" stroke-width="3"/>
+
+            <!-- pine forest bands -->
+            <path d="M-10 296 Q40 260 80 296 Q120 256 170 296 Q215 262 260 296 Q300 258 350 296 Q400 262 440 296 Q490 256 530 296 Q570 266 610 296 V310 H-10 Z" fill="#2f7d5b"/>
+            <!-- lake -->
+            <rect x="-10" y="296" width="620" height="124" fill="#44cfc9"/>
+            <path d="M-10 296 H610" fill="none"/>
+            <path d="M40 330 q14 -8 28 0 t28 0 M250 350 q14 -8 28 0 t28 0 M420 322 q14 -8 28 0 t28 0 M120 380 q14 -8 28 0 t28 0" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/>
+            <!-- mirror reflection hint -->
+            <path d="M160 300 L190 330 L220 300 Z M430 300 L458 332 L486 300 Z" fill="#7d9ec8" stroke="none" opacity=".35"/>
+
+            <!-- red canoe -->
+            <g class="canoe">
+              <path d="M260 352 Q312 380 380 352 Q320 346 260 352 Z" fill="#d9482f"/>
+              <path d="M276 350 L360 352" fill="none" stroke="#ffd95a" stroke-width="4"/>
+              <circle cx="300" cy="338" r="9" fill="#ffd0a6"/>
+              <path d="M292 348 Q300 330 308 348 Z" fill="#2f7d5b"/>
+              <circle cx="330" cy="338" r="9" fill="#ffd0a6"/>
+              <path d="M322 348 Q330 330 338 348 Z" fill="#f2a93b"/>
+              <path d="M286 366 L350 330" fill="none" stroke="#8a5a2b" stroke-width="3"/>
+            </g>
+
+            <!-- shore with golden larches -->
+            <path d="M-10 372 Q120 362 220 384 Q130 420 -10 420 Z" fill="#a5db86"/>
+            <path d="M610 360 Q500 352 420 380 Q500 420 610 420 Z" fill="#a5db86"/>
+            <g fill="#f2a93b">
+              <path d="M50 390 L72 330 L94 390 Z"/><path d="M82 394 L100 344 L118 394 Z"/>
+              <path d="M520 392 L542 328 L564 392 Z"/><path d="M556 396 L574 348 L592 396 Z"/>
+            </g>
+            <g fill="#2f7d5b">
+              <path d="M14 396 L32 348 L50 396 Z"/><path d="M478 398 L496 350 L514 398 Z"/>
+            </g>
+            <!-- red chairs -->
+            <g>
+              <path d="M150 396 L152 366 H176 L178 396 M150 380 H178" fill="none" stroke-width="3.5"/>
+              <path d="M148 366 H180 L176 380 H152 Z" fill="#d9482f"/>
+              <path d="M188 396 L190 366 H214 L216 396 M188 380 H216" fill="none" stroke-width="3.5"/>
+              <path d="M186 366 H218 L214 380 H190 Z" fill="#d9482f"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- FACT STRIP -->
+    <section class="facts" data-i18n-aria="factsAria" aria-label="Quick facts">
+      <ul>
+        <li><span aria-hidden="true">💎</span><span data-i18n-html="fact1Html"><strong>Turquoise lakes</strong> like Louise &amp; Moraine</span></li>
+        <li><span aria-hidden="true">🛣️</span><span data-i18n-html="fact2Html"><strong>Icefields Parkway</strong>, 230 km of wow</span></li>
+        <li><span aria-hidden="true">🧊</span><span data-i18n-html="fact3Html"><strong>Glaciers</strong> you can walk on</span></li>
+        <li><span aria-hidden="true">🐻</span><span data-i18n-html="fact4Html"><strong>Wildlife</strong> at the roadside</span></li>
+      </ul>
+    </section>
+
+    <!-- MAP -->
+    <section class="explore-section" id="explore" aria-labelledby="explore-title">
+      <div class="section-head">
+        <h2 id="explore-title" data-i18n="exploreTitle">Pick a spot on the map!</h2>
+        <div class="chips" role="group" data-i18n-aria="filterAria" aria-label="Show on map">
+          <button class="chip is-active" type="button" data-filter="all" aria-pressed="true" data-i18n="filterAll">🗺️ All</button>
+          <button class="chip" type="button" data-filter="lake" aria-pressed="false" data-i18n="filterLake">💎 Lakes</button>
+          <button class="chip" type="button" data-filter="view" aria-pressed="false" data-i18n="filterView">🏔️ Views</button>
+          <button class="chip" type="button" data-filter="falls" aria-pressed="false" data-i18n="filterFalls">🌊 Falls</button>
+          <button class="chip" type="button" data-filter="hike" aria-pressed="false" data-i18n="filterHike">🥾 Hikes</button>
+          <button class="chip" type="button" data-filter="wild" aria-pressed="false" data-i18n="filterWild">🐻 Wildlife</button>
+          <button class="chip" type="button" data-filter="fun" aria-pressed="false" data-i18n="filterFun">🎡 Fun</button>
+          <button class="chip" type="button" data-filter="food" aria-pressed="false" data-i18n="filterFood">🍽️ Food</button>
+        </div>
+      </div>
+
+      <div class="explore">
+        <div class="map-wrap">
+          <div id="map" role="application" data-i18n-aria="mapAria" aria-label="Interactive map of Banff and Jasper"></div>
+          <button id="fit" class="map-btn" type="button" data-i18n="resetView">🔭 Reset view</button>
+          <noscript><p class="noscript" data-i18n="noscript">The map needs JavaScript. Try enabling it!</p></noscript>
+        </div>
+        <ul id="list" class="list" data-i18n-aria="listAria" aria-label="Places"></ul>
+      </div>
+      <p class="note" data-i18n="note">Food pins mark good areas to try a dish, not endorsements of one shop. Coordinates are approximate. Roads, shuttles, trail rules and opening hours change, so check Parks Canada before you go.</p>
+    </section>
+
+    <!-- TIPS -->
+    <section class="tips" id="tips" aria-labelledby="tips-title">
+      <h2 id="tips-title" data-i18n="tipsTitle">Little tips for big mountains</h2>
+      <div class="tips__grid">
+        <article class="tip tip--yellow">
+          <span class="tip__icon" aria-hidden="true">🍂</span>
+          <h3 data-i18n="tip1Title">When to go</h3>
+          <p data-i18n="tip1">July and August are warmest, with lakes thawed. Late September brings golden larches, and winter brings frozen waterfalls and skating. Moraine Lake road opens late spring.</p>
+        </article>
+        <article class="tip tip--sky">
+          <span class="tip__icon" aria-hidden="true">🎫</span>
+          <h3 data-i18n="tip2Title">Park pass</h3>
+          <p data-i18n="tip2">You need a Parks Canada pass to stop in the national parks. Buy it online or at the gate. Some places, like Moraine Lake, use a shuttle you book ahead.</p>
+        </article>
+        <article class="tip tip--pink">
+          <span class="tip__icon" aria-hidden="true">🐻</span>
+          <h3 data-i18n="tip3Title">Wildlife</h3>
+          <p data-i18n="tip3">Stay 100 m from bears and wolves and 30 m from other animals. Never feed them. Slow down on roads at dawn and dusk.</p>
+        </article>
+        <article class="tip tip--jade">
+          <span class="tip__icon" aria-hidden="true">🧥</span>
+          <h3 data-i18n="tip4Title">Layers</h3>
+          <p data-i18n="tip4">Weather changes fast, even in summer. Pack a warm layer, rain jacket and sun hat. Fuel is rare on the Icefields Parkway, so fill up first.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p data-i18n-html="footerHtml">Made with 🧡 for curious travellers. Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors, map style © OpenTopoMap.</p>
+  </footer>
+
+  <script src="vendor/leaflet.js"></script>
+  <script src="vendor/leaflet.markercluster.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
