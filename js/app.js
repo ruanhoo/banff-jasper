@@ -80,7 +80,7 @@
   let activeId = null;
   let filter = 'all';
 
-  const mapsLink = (p) => BJ_MAP.url(p.lat, p.lng);
+  const mapsLink = (p) => BJ_MAP.url(p);
 
   const markerTitle = (p) => `${nameOf(p)} (${tagOf(p)})`;
   // popup.update() would re-set the HTML and wipe the photo, so only re-measure and re-position the popup.

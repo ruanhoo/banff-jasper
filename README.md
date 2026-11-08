@@ -44,6 +44,6 @@ URL options for the living map:
 - Parts of the Bow Valley Parkway and the Icefields Parkway have seasonal closures and winter driving rules. Check road reports first.
 - Routes drawn by the planner are straight-line sketches (distance estimate × 1.3), and food areas are illustrative, not recommendations of specific businesses.
 - The living map's geography is hand-drawn and compressed. It is not to scale, and coordinates throughout are approximate.
-- "Open in maps" links go to OpenStreetMap when the browser time zone is mainland China (Google Maps is blocked there) and to Google Maps otherwise. Force one with `?maps=osm` or `?maps=google`.
+- "Open in maps" links go to OpenStreetMap when the browser time zone is mainland China (Google Maps is blocked there) and to a Google Maps search by place name (so photos, hours and reviews show) otherwise; food pins and wildlife stretches use the exact pin. Force one with `?maps=osm` or `?maps=google`.
 - The classic map uses OpenStreetMap-based tiles. No API key is needed or stored in this repo.
 - Chinese translations are machine-assisted and welcome corrections.
