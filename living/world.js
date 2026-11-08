@@ -250,7 +250,7 @@
     ['tenpeaks', 'moraine', 220, -190, 640, 540], ['chephren', 'waterfowl', -230, -200, 420, 520], ['columbia', 'icefield', HERO.dx, HERO.dy, HERO.w, HERO.h],
     ['athabasca', 'athglacier', -160, -310, 440, 540], ['whistlers', 'skytram', -230, -160, 430, 460], ['pyramid', 'pyramid', 120, -250, 360, 430],
     ['cavell', 'cavell', -90, -260, 560, 640], ['robson', 'robson', 0, -300, 600, 720], ['kerkeslin', 'athfalls', 330, 160, 380, 420],
-    ['edith', 'jasper', 610, 120, 440, 420], ['norquay', 'norquay', 100, -170, 420, 450], ['lefroy', 'lakelouise', -280, 240, 340, 520],
+    ['edith', 'jasper', 610, 120, 440, 420], ['norquay', 'norquay', 100, -170, 420, 450], ['lefroy', 'lakelouise', -520, 270, 320, 500],
   ];
   const PEAKS = [];
   NAMED.forEach(([key, pid, dx, dy, w, h]) => { const p = P[pid]; if (p) PEAKS.push({ x: p.x + dx, y: p.y + dy, w: key === "columbia" ? w : w * 0.9, h: key === "columbia" ? h : h * 0.72, seed: PEAKS.length * 5 + 1, key, named: true, far: 0 }); });
